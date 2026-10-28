@@ -1,0 +1,817 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mumbai Prints - Wholesale Textile Ecosystem</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    :root {
+      --mp-maroon: #68150f;
+      --mp-maroon-dark: #4e0e09;
+      --mp-orange: #eb4d26;
+      --mp-bg: #fdf8f6;
+    }
+    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: var(--mp-bg); }
+    .bg-mp-maroon { background-color: var(--mp-maroon); }
+    .bg-mp-maroon-dark { background-color: var(--mp-maroon-dark); }
+    .bg-mp-orange { background-color: var(--mp-orange); }
+    .text-mp-maroon { color: var(--mp-maroon); }
+    .text-mp-orange { color: var(--mp-orange); }
+    .border-mp-maroon { border-color: var(--mp-maroon); }
+    .border-mp-orange { border-color: var(--mp-orange); }
+
+    .date-divider {
+      display: flex; align-items: center; text-align: center; margin: 24px 0 14px 0;
+    }
+    .date-divider::before, .date-divider::after {
+      content: ''; flex: 1; border-bottom: 2px solid #e7d5cf;
+    }
+    .date-divider:not(:empty)::before { margin-right: 14px; }
+    .date-divider:not(:empty)::after { margin-left: 14px; }
+  </style>
+</head>
+<body class="min-h-screen pb-20 text-slate-800">
+
+  <!-- TOP SIMULATOR BAR -->
+  <div class="bg-slate-950 text-white p-2.5 shadow sticky top-0 z-50">
+    <div class="max-w-6xl mx-auto flex flex-wrap items-center justify-between gap-2">
+      <div class="flex items-center gap-2">
+        <span class="bg-amber-400 text-black font-extrabold px-2 py-0.5 rounded text-[11px]">SIMULATOR</span>
+        <span class="text-xs text-slate-300">Test Role:</span>
+      </div>
+      <select id="roleSelector" onchange="switchRoleFromDropdown()" class="bg-slate-800 border border-slate-600 text-white text-xs sm:text-sm rounded px-3 py-1 font-semibold focus:outline-none">
+        <option value="join_screen">📲 Customer Login / Join Screen</option>
+        <option value="admin" selected>👑 Level 1: Super Admin (Owner)</option>
+        <option value="shop">🏪 Level 2: Shop Mode (Staff)</option>
+        <option value="cust_active">🛍️ Level 3: Customer Mobile View</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- MUMBAI PRINTS HEADER -->
+  <header class="bg-mp-maroon text-white shadow-md border-b-4 border-mp-orange">
+    <div class="max-w-6xl mx-auto p-4 flex flex-wrap justify-between items-center gap-3">
+      <div class="flex items-center gap-3">
+        <div class="bg-white text-mp-maroon font-black text-xl px-2.5 py-1 rounded shadow border-2 border-mp-orange tracking-tighter">MP</div>
+        <div>
+          <div class="flex items-center gap-2">
+            <h1 class="text-2xl font-black tracking-wide uppercase">Mumbai Prints</h1>
+            <span class="text-[11px] bg-mp-orange text-white font-bold px-2 py-0.5 rounded-full uppercase">Wholesale</span>
+          </div>
+          <p class="text-xs text-orange-200 font-medium tracking-widest uppercase">QSP is our USP</p>
+        </div>
+      </div>
+      <div id="internalCategoriesBar" class="flex flex-wrap items-center gap-1.5 bg-mp-maroon-dark/80 p-1.5 rounded-lg border border-orange-900/60"></div>
+    </div>
+  </header>
+
+  <!-- CUSTOMER JOIN / LOGIN SCREEN -->
+  <section id="customerJoinSection" class="hidden max-w-md mx-auto mt-10 p-4">
+    <div class="bg-white rounded-2xl shadow-xl border-2 border-orange-200 overflow-hidden">
+      <div class="bg-mp-maroon text-white p-6 text-center border-b-4 border-mp-orange">
+        <div class="w-14 h-14 bg-white text-mp-maroon font-black text-2xl rounded-xl mx-auto flex items-center justify-center border-2 border-mp-orange shadow mb-2">MP</div>
+        <h2 class="text-xl font-black uppercase tracking-wide">Mumbai Prints</h2>
+        <p class="text-xs text-orange-200 tracking-widest uppercase mt-0.5">QSP is our USP</p>
+      </div>
+      <div class="p-6 space-y-4 text-xs">
+        <div>
+          <label class="block font-bold text-slate-700 uppercase mb-1">1. Your Name / Shop Name *</label>
+          <input type="text" id="joinCustName" placeholder="e.g. XYZ Textile" class="w-full border-2 border-slate-200 rounded-lg p-2.5 text-sm focus:outline-none focus:border-mp-orange">
+        </div>
+        <div>
+          <label class="block font-bold text-slate-700 uppercase mb-1">2. Mobile Number *</label>
+          <input type="tel" id="joinCustPhone" placeholder="8893173438" class="w-full border-2 border-slate-200 rounded-lg p-2.5 text-sm focus:outline-none focus:border-mp-orange">
+        </div>
+        <div>
+          <label class="block font-bold text-slate-700 uppercase mb-1">3. Place / Location *</label>
+          <select id="joinCustPlace" class="w-full border-2 border-slate-200 rounded-lg p-2.5 text-sm font-semibold text-slate-800 bg-orange-50/40 focus:outline-none"></select>
+          <p class="text-[10px] text-slate-400 mt-1">Other places will automatically route to Category X.</p>
+        </div>
+        <button onclick="submitCustomerJoin()" class="w-full bg-mp-maroon hover:bg-mp-maroon-dark text-white font-black py-3 rounded-xl shadow-md text-sm uppercase tracking-wider transition">
+          Join Mumbai Prints Now →
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- MAIN WORKSPACE -->
+  <main id="mainAppWorkspace" class="max-w-6xl mx-auto p-4 grid grid-cols-1 lg:grid-cols-12 gap-5 mt-2">
+
+    <!-- LEFT COLUMN -->
+    <div class="lg:col-span-3 space-y-5">
+      <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+        <div class="bg-[#fcedea] p-3 border-b border-orange-100 flex justify-between items-center">
+          <h2 class="font-bold text-mp-maroon text-xs uppercase">📂 Fabric Folders</h2>
+          <button onclick="addNewFabricFolder()" class="bg-mp-orange hover:bg-orange-700 text-white text-xs px-2 py-0.5 rounded font-bold">+ New</button>
+        </div>
+        <div id="fabricFolderList" class="divide-y divide-slate-100 max-h-64 overflow-y-auto text-sm"></div>
+      </div>
+
+      <!-- BUYERS MANAGEMENT (ADMIN & SHOP) -->
+      <div id="customerManagementCard" class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+        <div class="bg-[#fcedea] p-3 border-b border-orange-100">
+          <div class="flex justify-between items-center">
+            <h2 class="font-bold text-mp-maroon text-xs uppercase" id="activeCatListTitle">👥 Buyers</h2>
+            <button onclick="openAddBuyerModal()" class="bg-mp-maroon hover:bg-mp-maroon-dark text-white text-[11px] px-2 py-0.5 rounded font-bold">+ Add SMS Invite</button>
+          </div>
+          <p class="text-[11px] font-semibold text-mp-orange mt-0.5" id="activeCatPlaceSubtitle">📍 Place</p>
+        </div>
+        <div id="buyersListContainer" class="divide-y divide-slate-100 max-h-72 overflow-y-auto text-sm"></div>
+      </div>
+    </div>
+
+    <!-- CENTER COLUMN -->
+    <div class="lg:col-span-5 space-y-5">
+      <!-- BULK UPLOAD PANEL -->
+      <div id="bulkUploadPanel" class="bg-white rounded-xl shadow-sm border-2 border-orange-300 p-4">
+        <div class="flex flex-wrap justify-between items-center gap-2 mb-3 border-b border-orange-100 pb-2">
+          <h3 class="font-bold text-mp-maroon text-sm">📤 Bulk Photo Upload (100–150+)</h3>
+          <button onclick="simulateBulk100Photos()" class="bg-amber-100 hover:bg-amber-200 text-amber-900 border border-amber-300 text-xs font-bold px-2 py-1 rounded">⚡ 100 Photos Demo</button>
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">1. Fabric Folder</label>
+            <select id="uploadFolderSelect" class="w-full border border-slate-300 rounded p-2 font-semibold"></select>
+          </div>
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">2. Target Category</label>
+            <select id="uploadCategorySelect" class="w-full border border-orange-300 bg-orange-50 text-mp-maroon rounded p-2 font-bold"></select>
+          </div>
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">3. Lot Prefix</label>
+            <input type="text" id="uploadLotPrefix" placeholder="e.g. Special Lot (#1, #2...)" class="w-full border border-slate-300 rounded p-2">
+          </div>
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">4. Date</label>
+            <select id="uploadDateSelect" class="w-full border border-slate-300 rounded p-2">
+              <option value="Today — 28 Oct 2026">Today — 28 Oct 2026</option>
+              <option value="Yesterday — 27 Oct 2026">Yesterday — 27 Oct 2026</option>
+            </select>
+          </div>
+          <div class="sm:col-span-2">
+            <label class="block font-bold text-slate-700 mb-1">5. Select Photos</label>
+            <input type="file" id="uploadPhotosInput" multiple accept="image/*" class="w-full text-xs text-slate-600 file:mr-3 file:py-1 file:px-3 file:rounded file:border-0 file:bg-orange-100 file:text-mp-maroon cursor-pointer">
+          </div>
+        </div>
+        <button onclick="handleBulkUploadSubmit()" class="mt-3.5 w-full bg-mp-maroon hover:bg-mp-maroon-dark text-white font-bold py-2.5 rounded-lg shadow text-xs uppercase tracking-wider">
+          🚀 Upload & Send to Category
+        </button>
+      </div>
+
+      <!-- DESIGNS FEED -->
+      <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-4">
+        <div class="flex justify-between items-center border-b border-slate-200 pb-3 mb-2">
+          <div>
+            <span class="text-[11px] uppercase font-bold text-mp-orange" id="feedHeaderSubtitle">Folder:</span>
+            <h2 id="activeFolderHeading" class="text-xl font-bold text-mp-maroon">Ajrakh Print</h2>
+          </div>
+          <span id="designsTotalBadge" class="bg-orange-100 text-mp-maroon text-xs font-bold px-3 py-1 rounded-full border border-orange-200">0 Designs</span>
+        </div>
+        <div id="designsFeedContainer" class="space-y-4"></div>
+      </div>
+    </div>
+
+    <!-- RIGHT COLUMN: 1-ON-1 CHAT -->
+    <div class="lg:col-span-4">
+      <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden sticky top-16 flex flex-col h-[580px]">
+        <div class="bg-mp-maroon text-white p-3 border-b-2 border-mp-orange">
+          <div class="flex justify-between items-center text-[10px] uppercase font-bold text-orange-200">
+            <span id="chatHeaderCategoryBadge">Category 1 Chat</span>
+            <span class="bg-mp-orange px-1.5 py-0.5 rounded text-white font-bold">Direct</span>
+          </div>
+          <h3 class="font-bold text-sm mt-1 truncate" id="activeChatTargetTitle">💬 Buyer Name</h3>
+          <p class="text-[11px] text-orange-200" id="chatSubInfo">Phone & Place</p>
+        </div>
+        <div id="chatMessagesArea" class="flex-1 p-3 overflow-y-auto space-y-3 bg-[#f7f1ee] text-xs"></div>
+        <div class="p-2.5 bg-slate-50 border-t border-slate-200 flex gap-1.5">
+          <input type="text" id="chatMessageInput" onkeydown="if(event.key==='Enter') sendChatMessage()" placeholder="Type message..." class="flex-1 border border-slate-300 rounded-lg px-2.5 py-2 text-xs focus:outline-none focus:border-mp-orange">
+          <button onclick="sendChatMessage()" class="bg-mp-maroon hover:bg-mp-maroon-dark text-white font-bold px-3.5 py-2 rounded-lg text-xs">Send</button>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- CUSTOMER MOBILE VIEW BOTTOM NAVIGATION BAR (4 TABS) -->
+  <nav id="customerBottomNav" class="hidden fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 shadow-lg z-40 p-2">
+    <div class="max-w-md mx-auto grid grid-cols-4 gap-1 text-center">
+      <button onclick="switchCustomerTab('chat')" id="custTab_chat" class="p-2 rounded-lg flex flex-col items-center text-mp-maroon font-bold text-xs bg-orange-50">
+        <span class="text-base">💬</span> Chat
+      </button>
+      <button onclick="switchCustomerTab('folders')" id="custTab_folders" class="p-2 rounded-lg flex flex-col items-center text-slate-500 font-bold text-xs hover:bg-slate-50">
+        <span class="text-base">📂</span> Folders
+      </button>
+      <button onclick="switchCustomerTab('favorites')" id="custTab_favorites" class="p-2 rounded-lg flex flex-col items-center text-slate-500 font-bold text-xs hover:bg-slate-50">
+        <span class="text-base">❤️</span> Favorites
+      </button>
+      <button onclick="switchCustomerTab('about')" id="custTab_about" class="p-2 rounded-lg flex flex-col items-center text-slate-500 font-bold text-xs hover:bg-slate-50">
+        <span class="text-base">ℹ️</span> About Us
+      </button>
+    </div>
+  </nav>
+
+  <!-- SHOP LEVEL 2 BOTTOM NAVIGATION BAR (3 TABS) -->
+  <nav id="shopBottomNav" class="hidden fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 shadow-lg z-40 p-2">
+    <div class="max-w-md mx-auto grid grid-cols-3 gap-1 text-center">
+      <button onclick="switchShopTab('categories')" id="shopTab_categories" class="p-2 rounded-lg flex flex-col items-center text-mp-maroon font-bold text-xs bg-orange-50">
+        <span class="text-base">🗂️</span> Category List
+      </button>
+      <button onclick="switchShopTab('orders')" id="shopTab_orders" class="p-2 rounded-lg flex flex-col items-center text-slate-500 font-bold text-xs hover:bg-slate-50">
+        <span class="text-base">📦</span> Order List
+      </button>
+      <button onclick="switchShopTab('favorites')" id="shopTab_favorites" class="p-2 rounded-lg flex flex-col items-center text-slate-500 font-bold text-xs hover:bg-slate-50">
+        <span class="text-base">⭐</span> Fav Customers
+      </button>
+    </div>
+  </nav>
+
+  <script>
+    let appData = {
+      currentRole: 'admin',
+      activeCategoryKey: 'cat1',
+      activeFolder: 'Ajrakh Print',
+      activeChatBuyerId: 'b1',
+      loggedInCustomerId: 'b1',
+      activeCustomerTab: 'chat',
+      activeShopTab: 'categories',
+
+      folders: ['Ajrakh Print', 'DJ Material', '3D Print', 'DCM', '320 Cut', '3 Meter Cut'],
+
+      categories: {
+        cat1: { id: 'cat1', name: 'Category 1', place: 'Ernakulam', buyerIds: ['b1'] },
+        cat2: { id: 'cat2', name: 'Category 2', place: 'Tamil Nadu', buyerIds: ['b2'] },
+        cat3: { id: 'cat3', name: 'Category 3', place: 'Kottayam', buyerIds: ['b3'] },
+        cat4: { id: 'cat4', name: 'Category 4', place: 'Alappuzha', buyerIds: ['b4'] },
+        catX: { id: 'catX', name: 'Category X', place: 'Other Places', buyerIds: [] }
+      },
+
+      buyers: {
+        b1: { id: 'b1', name: 'Kochi Fashion Hub', phone: '9847011223', place: 'Ernakulam', nickname: 'Salim (Kochi)', catKey: 'cat1', isFav: true },
+        b2: { id: 'b2', name: 'Chennai Silks', phone: '9840055667', place: 'Tamil Nadu', nickname: 'Murugan', catKey: 'cat2', isFav: false },
+        b3: { id: 'b3', name: 'Kottayam Textorium', phone: '9447088990', place: 'Kottayam', nickname: 'Thomas', catKey: 'cat3', isFav: true },
+        b4: { id: 'b4', name: 'Alleppey Collections', phone: '9446033441', place: 'Alappuzha', nickname: 'Anil', catKey: 'cat4', isFav: false }
+      },
+
+      chats: {
+        b1: [
+          { from: 'shop', sender: 'Mumbai Prints', text: 'Hello Kochi Fashion Hub! Welcome to Mumbai Prints.', time: '10:00 AM' }
+        ]
+      },
+
+      favorites: { b1: true, b3: true },
+
+      designs: [
+        {
+          id: 1,
+          folder: 'Ajrakh Print',
+          title: 'Ajrakh Pure Cotton #1',
+          dateGroup: 'Today — 28 Oct 2026',
+          targetCat: 'all',
+          targetLabel: 'All Categories',
+          img: 'https://images.unsplash.com/photo-1620799140408-edc6dcb6d633?auto=format&fit=crop&w=500&q=80',
+          isFavForCust: { b1: true },
+          replies: []
+        }
+      ],
+
+      aboutUs: {
+        phone1: '8893173438',
+        phone2: '9414056789',
+        email: 'mumbaiprint18@gmail.com',
+        instagram: 'https://instagram.com/mumbaiprints',
+        message: 'Thank you so much for showing your trust in us. We will always stand by your side to support you. Thank you so much!'
+      }
+    };
+
+    function switchRoleFromDropdown() {
+      appData.currentRole = document.getElementById('roleSelector').value;
+      if (appData.currentRole === 'cust_active') {
+        appData.activeChatBuyerId = appData.loggedInCustomerId;
+      }
+      renderEverything();
+    }
+
+    function renderEverything() {
+      const role = appData.currentRole;
+      const isJoinScreen = role === 'join_screen';
+      const isAdmin = role === 'admin';
+      const isShop = role === 'shop';
+      const isCust = role === 'cust_active';
+
+      document.getElementById('customerJoinSection').classList.toggle('hidden', !isJoinScreen);
+      document.getElementById('mainAppWorkspace').classList.toggle('hidden', isJoinScreen);
+      document.getElementById('customerBottomNav').classList.toggle('hidden', !isCust);
+      document.getElementById('shopBottomNav').classList.toggle('hidden', !isShop);
+
+      document.getElementById('internalCategoriesBar').style.display = (isAdmin || isShop) ? 'flex' : 'none';
+
+      if (isJoinScreen) {
+        populateJoinPlacesDropdown();
+        return;
+      }
+
+      document.getElementById('customerManagementCard').style.display = isCust ? 'none' : 'block';
+      document.getElementById('bulkUploadPanel').style.display = isCust ? 'none' : 'block';
+
+      renderCategoryTabs();
+      renderFolders();
+      renderBuyersList();
+      renderUploadDropdowns();
+      renderDesignsFeed();
+      renderChatWindow();
+    }
+
+    function populateJoinPlacesDropdown() {
+      const select = document.getElementById('joinCustPlace');
+      let html = `<option value="">-- Select Your Place --</option>`;
+      Object.values(appData.categories).forEach(cat => {
+        if(cat.id !== 'catX') {
+          html += `<option value="${cat.place}">${cat.place}</option>`;
+        }
+      });
+      html += `<option value="Other">Other Place (Goes to Category X)</option>`;
+      select.innerHTML = html;
+    }
+
+    function submitCustomerJoin() {
+      const name = document.getElementById('joinCustName').value.trim();
+      const phone = document.getElementById('joinCustPhone').value.trim();
+      const place = document.getElementById('joinCustPlace').value.trim();
+
+      if (!name || !phone || !place) {
+        alert('All fields are mandatory.');
+        return;
+      }
+
+      let matchedCatKey = 'catX';
+      Object.values(appData.categories).forEach(cat => {
+        if (cat.place.toLowerCase() === place.toLowerCase()) {
+          matchedCatKey = cat.id;
+        }
+      });
+
+      const newId = 'b' + Date.now();
+      appData.buyers[newId] = { id: newId, name, phone, place, nickname: '', catKey: matchedCatKey, isFav: false };
+      appData.categories[matchedCatKey].buyerIds.unshift(newId);
+
+      appData.chats[newId] = [{
+        from: 'shop',
+        sender: 'Mumbai Prints',
+        text: `Hello ${name}! Welcome to Mumbai Prints. You are now connected with us.`,
+        time: 'Just now'
+      }];
+
+      appData.loggedInCustomerId = newId;
+      appData.activeChatBuyerId = newId;
+      appData.activeCategoryKey = matchedCatKey;
+
+      alert(`Welcome to Mumbai Prints, ${name}!`);
+      document.getElementById('roleSelector').value = 'cust_active';
+      appData.currentRole = 'cust_active';
+      renderEverything();
+    }
+
+    // CATEGORY TABS WITH EDIT & RENAME
+    function renderCategoryTabs() {
+      const bar = document.getElementById('internalCategoriesBar');
+      bar.innerHTML = '';
+      const isAdmin = appData.currentRole === 'admin';
+
+      Object.values(appData.categories).forEach(cat => {
+        const isActive = appData.activeCategoryKey === cat.id;
+        const btn = document.createElement('button');
+        btn.className = `px-2.5 py-1 rounded text-xs font-bold transition flex items-center gap-1 ${
+          isActive ? 'bg-mp-orange text-white shadow' : 'text-orange-200 hover:text-white hover:bg-mp-maroon'
+        }`;
+        btn.innerHTML = `<span>${cat.name}: ${cat.place} (${cat.buyerIds.length})</span>`;
+        btn.onclick = () => {
+          appData.activeCategoryKey = cat.id;
+          const first = cat.buyerIds[0];
+          if(first) appData.activeChatBuyerId = first;
+          renderEverything();
+        };
+
+        if (isAdmin) {
+          const editBtn = document.createElement('span');
+          editBtn.className = 'text-[10px] opacity-80 hover:opacity-100 ml-1 cursor-pointer';
+          editBtn.innerText = '✏️';
+          editBtn.onclick = (e) => { e.stopPropagation(); editCategory(cat.id); };
+          btn.appendChild(editBtn);
+        }
+        bar.appendChild(btn);
+      });
+
+      if (isAdmin) {
+        const addBtn = document.createElement('button');
+        addBtn.className = 'bg-amber-400 text-slate-950 font-bold px-2 py-1 rounded text-xs';
+        addBtn.innerText = '+ Add Category';
+        addBtn.onclick = addNewCategory;
+        bar.appendChild(addBtn);
+      }
+    }
+
+    function editCategory(catKey) {
+      const cat = appData.categories[catKey];
+      const name = prompt('Category Name:', cat.name);
+      if(!name) return;
+      const place = prompt('Place Name:', cat.place);
+      if(!place) return;
+      cat.name = name.trim();
+      cat.place = place.trim();
+      renderEverything();
+    }
+
+    function addNewCategory() {
+      const name = prompt('New Category Name:', 'Category 5');
+      if(!name) return;
+      const place = prompt('Place Name for this Category:', 'Calicut');
+      if(!place) return;
+      const key = 'cat' + Date.now();
+      appData.categories[key] = { id: key, name: name.trim(), place: place.trim(), buyerIds: [] };
+      appData.activeCategoryKey = key;
+      renderEverything();
+    }
+
+    // FOLDERS (SHOP MODE & ADMIN CAN EDIT/DELETE/ADD)
+    function renderFolders() {
+      const list = document.getElementById('fabricFolderList');
+      list.innerHTML = '';
+      appData.folders.forEach(f => {
+        const isActive = appData.activeFolder === f;
+        const div = document.createElement('div');
+        div.className = `p-2.5 flex justify-between items-center cursor-pointer transition ${
+          isActive ? 'bg-orange-50 border-l-4 border-mp-orange font-bold text-mp-maroon' : 'hover:bg-slate-50 text-slate-700'
+        }`;
+        div.onclick = () => { appData.activeFolder = f; renderEverything(); };
+        div.innerHTML = `<span>📁 ${f}</span> <button onclick="event.stopPropagation(); editFolder('${f}')" class="text-[10px] text-mp-orange font-bold">Edit</button>`;
+        list.appendChild(div);
+      });
+    }
+
+    function addNewFabricFolder() {
+      const name = prompt('New Fabric Folder Name:');
+      if(name && name.trim()) {
+        appData.folders.push(name.trim());
+        appData.activeFolder = name.trim();
+        renderEverything();
+      }
+    }
+
+    function editFolder(oldName) {
+      const action = prompt(`Choose action for folder "${oldName}":\n1. Rename\n2. Delete`, '1');
+      if(action === '1') {
+        const newName = prompt('New Folder Name:', oldName);
+        if(newName && newName.trim()) {
+          appData.folders = appData.folders.map(f => f === oldName ? newName.trim() : f);
+          appData.activeFolder = newName.trim();
+          renderEverything();
+        }
+      } else if(action === '2') {
+        if(confirm(`Delete folder "${oldName}"?`)) {
+          appData.folders = appData.folders.filter(f => f !== oldName);
+          appData.activeFolder = appData.folders[0] || '';
+          renderEverything();
+        }
+      }
+    }
+
+    // BUYERS LIST + SHIFT CATEGORY + SMS INVITE FEATURE
+    function renderBuyersList() {
+      const activeCat = appData.categories[appData.activeCategoryKey];
+      document.getElementById('activeCatListTitle').innerText = `👥 ${activeCat.name} Buyers (${activeCat.buyerIds.length})`;
+      document.getElementById('activeCatPlaceSubtitle').innerText = `📍 Place: ${activeCat.place}`;
+
+      const list = document.getElementById('buyersListContainer');
+      list.innerHTML = '';
+
+      if(activeCat.buyerIds.length === 0) {
+        list.innerHTML = `<div class="p-3 text-xs text-slate-400 text-center">No buyers in this category.</div>`;
+        return;
+      }
+
+      activeCat.buyerIds.forEach(id => {
+        const b = appData.buyers[id];
+        if(!b) return;
+        const isSelected = appData.activeChatBuyerId === id;
+        const div = document.createElement('div');
+        div.className = `p-2.5 flex justify-between items-start cursor-pointer ${
+          isSelected ? 'bg-orange-100/70 border-l-4 border-mp-maroon font-bold' : 'hover:bg-slate-50'
+        }`;
+        div.onclick = () => { appData.activeChatBuyerId = id; renderChatWindow(); renderBuyersList(); };
+
+        div.innerHTML = `
+          <div class="truncate pr-1">
+            <div class="text-xs text-slate-900">${b.nickname ? b.nickname + ' (' + b.name + ')' : b.name} ${b.isFav ? '⭐' : ''}</div>
+            <div class="text-[10px] text-slate-600 font-normal">📞 ${b.phone} • 📍 ${b.place}</div>
+          </div>
+          <div class="flex flex-col gap-1 items-end shrink-0">
+            <button onclick="event.stopPropagation(); toggleFavCustomer('${id}')" class="text-[10px] text-amber-600 font-bold">${b.isFav ? 'Unstar' : 'Star ⭐'}</button>
+            <button onclick="event.stopPropagation(); shiftBuyerCategory('${id}')" class="text-[10px] text-blue-600 font-bold">Shift</button>
+            <button onclick="event.stopPropagation(); removeBuyer('${id}')" class="text-[10px] text-red-500">Remove</button>
+          </div>
+        `;
+        list.appendChild(div);
+      });
+    }
+
+    function toggleFavCustomer(id) {
+      appData.buyers[id].isFav = !appData.buyers[id].isFav;
+      renderEverything();
+    }
+
+    function shiftBuyerCategory(id) {
+      const b = appData.buyers[id];
+      let msg = 'Select target category key (cat1, cat2, cat3, cat4, catX):';
+      const targetKey = prompt(msg, 'cat1');
+      if(targetKey && appData.categories[targetKey]) {
+        // remove from old
+        const oldCat = appData.categories[b.catKey];
+        oldCat.buyerIds = oldCat.buyerIds.filter(x => x !== id);
+        // add to new
+        appData.categories[targetKey].buyerIds.push(id);
+        b.catKey = targetKey;
+        alert(`Buyer successfully shifted to ${appData.categories[targetKey].name}!`);
+        renderEverything();
+      }
+    }
+
+    function removeBuyer(id) {
+      const b = appData.buyers[id];
+      if(confirm(`Remove buyer "${b.name}"?`)) {
+        const cat = appData.categories[b.catKey];
+        cat.buyerIds = cat.buyerIds.filter(x => x !== id);
+        delete appData.buyers[id];
+        renderEverything();
+      }
+    }
+
+    function openAddBuyerModal() {
+      const name = prompt('Customer / Shop Name (e.g. XYZ Textile):');
+      if(!name) return;
+      const phone = prompt('Mobile Number (e.g. 8893173438):', '8893173438');
+      if(!phone) return;
+      const place = prompt('Place / Location (e.g. Ernakulam, Tamil Nadu):', 'Ernakulam');
+      if(!place) return;
+
+      let matchedCatKey = 'catX';
+      Object.values(appData.categories).forEach(c => {
+        if(c.place.toLowerCase() === place.toLowerCase()) matchedCatKey = c.id;
+      });
+
+      const newId = 'b' + Date.now();
+      appData.buyers[newId] = { id: newId, name, phone, place, nickname: '', catKey: matchedCatKey, isFav: false };
+      appData.categories[matchedCatKey].buyerIds.unshift(newId);
+      appData.chats[newId] = [];
+
+      // SMS SIMULATION IN PURE ENGLISH
+      alert(`📲 SMS sent to ${phone}:\n"Welcome! You have been added to the Mumbai Prints Gold Customer Family. Please click the link below to access our app: https://mumbaiprints.app/join?place=${encodeURIComponent(place)}"`);
+      renderEverything();
+    }
+
+    function renderUploadDropdowns() {
+      const fSelect = document.getElementById('uploadFolderSelect');
+      fSelect.innerHTML = appData.folders.map(f => `<option value="${f}" ${f === appData.activeFolder ? 'selected' : ''}>${f}</option>`).join('');
+
+      const cSelect = document.getElementById('uploadCategorySelect');
+      let options = `<option value="all">🌐 All Categories</option>`;
+      Object.values(appData.categories).forEach(c => {
+        options += `<option value="${c.id}" ${c.id === appData.activeCategoryKey ? 'selected' : ''}>🎯 ${c.name} (${c.place})</option>`;
+      });
+      cSelect.innerHTML = options;
+    }
+
+    function handleBulkUploadSubmit() {
+      const folder = document.getElementById('uploadFolderSelect').value;
+      const targetCat = document.getElementById('uploadCategorySelect').value;
+      const targetLabel = document.getElementById('uploadCategorySelect').selectedOptions[0].text;
+      const prefix = document.getElementById('uploadLotPrefix').value.trim() || `${folder} Design`;
+      const dateGroup = document.getElementById('uploadDateSelect').value;
+      const files = document.getElementById('uploadPhotosInput').files;
+
+      if(!files || files.length === 0) {
+        alert('Please select at least 1 photo.');
+        return;
+      }
+
+      for (let i = 0; i < files.length; i++) {
+        const url = URL.createObjectURL(files[i]);
+        appData.designs.unshift({
+          id: Date.now() + i,
+          folder: folder,
+          title: `${prefix} #${i + 1}`,
+          dateGroup: dateGroup,
+          targetCat: targetCat,
+          targetLabel: targetLabel,
+          img: url,
+          replies: []
+        });
+      }
+      alert(`${files.length} photos uploaded successfully!`);
+      renderEverything();
+    }
+
+    function simulateBulk100Photos() {
+      const folder = appData.activeFolder;
+      const targetCat = appData.activeCategoryKey;
+      for (let i = 100; i >= 1; i--) {
+        appData.designs.unshift({
+          id: Date.now() + i,
+          folder: folder,
+          title: `${folder} Lot #${i}`,
+          dateGroup: 'Today — 28 Oct 2026',
+          targetCat: targetCat,
+          targetLabel: 'Bulk Demo',
+          img: 'https://images.unsplash.com/photo-1620799140408-edc6dcb6d633?auto=format&fit=crop&w=400&q=60',
+          replies: []
+        });
+      }
+      alert('100 photos loaded instantly!');
+      renderEverything();
+    }
+
+    // DESIGNS FEED WITH EDIT & DELETE SENT PHOTOS
+    function renderDesignsFeed() {
+      document.getElementById('activeFolderHeading').innerText = appData.activeFolder;
+      const container = document.getElementById('designsFeedContainer');
+      container.innerHTML = '';
+
+      const role = appData.currentRole;
+      const isCust = role === 'cust_active';
+      let visible = appData.designs.filter(d => d.folder === appData.activeFolder);
+
+      if (isCust) {
+        const custObj = appData.buyers[appData.loggedInCustomerId];
+        const custCat = custObj ? custObj.catKey : 'cat1';
+        visible = visible.filter(d => d.targetCat === 'all' || d.targetCat === custCat);
+        document.getElementById('feedHeaderSubtitle').innerText = 'Received from Mumbai Prints:';
+      } else {
+        document.getElementById('feedHeaderSubtitle').innerText = 'Manage Feed:';
+      }
+
+      document.getElementById('designsTotalBadge').innerText = `${visible.length} Designs`;
+
+      if(visible.length === 0) {
+        container.innerHTML = `<div class="text-center py-10 text-slate-400 text-sm">No designs found.</div>`;
+        return;
+      }
+
+      visible.forEach(item => {
+        const card = document.createElement('div');
+        card.className = 'border border-slate-200 rounded-xl overflow-hidden bg-white shadow-sm mb-3';
+
+        const editDeleteBtns = !isCust ? `
+          <div class="bg-amber-50 p-1.5 flex justify-end gap-2 border-b border-amber-100">
+            <button onclick="editDesign(${item.id})" class="text-[10px] font-bold text-blue-700">Edit Title</button>
+            <button onclick="deleteDesign(${item.id})" class="text-[10px] font-bold text-red-600">Delete Photo</button>
+          </div>` : '';
+
+        card.innerHTML = `
+          ${editDeleteBtns}
+          <img src="${item.img}" class="w-full h-40 object-cover bg-slate-100">
+          <div class="p-2.5 flex justify-between items-center">
+            <h4 class="font-bold text-slate-800 text-xs">${item.title}</h4>
+            <input type="text" id="reply_${item.id}" placeholder="Enter quantity..." class="border rounded px-2 py-1 text-xs w-28">
+            <button onclick="sendOrderReply(${item.id})" class="bg-mp-orange text-white text-xs font-bold px-2 py-1 rounded">Order</button>
+          </div>
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    function editDesign(id) {
+      const d = appData.designs.find(x => x.id === id);
+      const newTitle = prompt('New Design Title:', d.title);
+      if(newTitle) { d.title = newTitle.trim(); renderEverything(); }
+    }
+
+    function deleteDesign(id) {
+      if(confirm('Delete this photo?')) {
+        appData.designs = appData.designs.filter(x => x.id !== id);
+        renderEverything();
+      }
+    }
+
+    function sendOrderReply(designId) {
+      const input = document.getElementById('reply_' + designId);
+      const text = input.value.trim();
+      if(!text) return;
+      const d = appData.designs.find(x => x.id === designId);
+      const buyerId = appData.currentRole === 'cust_active' ? appData.loggedInCustomerId : appData.activeChatBuyerId;
+
+      if(!appData.chats[buyerId]) appData.chats[buyerId] = [];
+      appData.chats[buyerId].push({
+        from: appData.currentRole === 'cust_active' ? 'cust' : 'shop',
+        sender: appData.buyers[buyerId]?.name || 'User',
+        text: text,
+        productImg: d.img,
+        productTitle: d.title,
+        time: 'Just now'
+      });
+      input.value = '';
+      renderChatWindow();
+      alert('Order sent successfully with photo preview!');
+    }
+
+    // CHAT WINDOW
+    function renderChatWindow() {
+      const isCust = appData.currentRole === 'cust_active';
+      const targetId = isCust ? appData.loggedInCustomerId : appData.activeChatBuyerId;
+      const b = appData.buyers[targetId];
+
+      document.getElementById('activeChatTargetTitle').innerText = isCust ? '🏢 Mumbai Prints' : (b ? `💬 ${b.nickname || b.name}` : 'Select Buyer');
+      document.getElementById('chatSubInfo').innerText = b ? `📞 ${b.phone} • 📍 ${b.place}` : '';
+
+      const box = document.getElementById('chatMessagesArea');
+      box.innerHTML = '';
+      const msgs = appData.chats[targetId] || [];
+
+      msgs.forEach(m => {
+        const isMe = isCust ? (m.from === 'cust') : (m.from === 'shop');
+        const imgHtml = m.productImg ? `<img src="${m.productImg}" class="w-full h-24 object-cover rounded mt-1 mb-1">` : '';
+        const div = document.createElement('div');
+        div.className = `flex flex-col ${isMe ? 'items-end' : 'items-start'}`;
+        div.innerHTML = `
+          <div class="max-w-[85%] rounded-lg p-2 shadow-sm ${isMe ? 'bg-[#ffeedd] text-mp-maroon' : 'bg-white text-slate-900'}">
+            <div class="text-[10px] font-bold">${m.sender}</div>
+            ${imgHtml}
+            <div class="text-xs mt-0.5">${m.text}</div>
+          </div>
+        `;
+        box.appendChild(div);
+      });
+      box.scrollTop = box.scrollHeight;
+    }
+
+    function sendChatMessage() {
+      const input = document.getElementById('chatMessageInput');
+      const text = input.value.trim();
+      if(!text) return;
+      const isCust = appData.currentRole === 'cust_active';
+      const targetId = isCust ? appData.loggedInCustomerId : appData.activeChatBuyerId;
+
+      if(!appData.chats[targetId]) appData.chats[targetId] = [];
+      appData.chats[targetId].push({
+        from: isCust ? 'cust' : 'shop',
+        sender: isCust ? appData.buyers[targetId]?.name : 'Mumbai Prints',
+        text: text,
+        time: 'Just now'
+      });
+      input.value = '';
+      renderChatWindow();
+    }
+
+    // CUSTOMER MOBILE TABS (4 TABS)
+    function switchCustomerTab(tab) {
+      appData.activeCustomerTab = tab;
+      // Highlight active tab
+      ['chat', 'folders', 'favorites', 'about'].forEach(t => {
+        const el = document.getElementById(`custTab_${t}`);
+        el.className = t === tab ? 'p-2 rounded-lg flex flex-col items-center text-mp-maroon font-bold text-xs bg-orange-50' : 'p-2 rounded-lg flex flex-col items-center text-slate-500 font-bold text-xs hover:bg-slate-50';
+      });
+
+      if(tab === 'about') {
+        const a = appData.aboutUs;
+        document.getElementById('designsFeedContainer').innerHTML = `
+          <div class="bg-white p-6 rounded-xl shadow border border-orange-100 space-y-4 text-xs">
+            <h3 class="text-lg font-black text-mp-maroon uppercase">Mumbai Prints</h3>
+            <p class="text-slate-600 font-medium">${a.message}</p>
+            <div class="border-t pt-3 space-y-2">
+              <p>📞 <b>Primary Phone:</b> ${a.phone1}</p>
+              <p>📞 <b>Secondary Phone:</b> ${a.phone2}</p>
+              <p>✉️ <b>Email:</b> ${a.email}</p>
+              <p>🌐 <b>Instagram:</b> <a href="${a.instagram}" target="_blank" class="text-blue-600 underline">Visit Profile</a></p>
+            </div>
+          </div>
+        `;
+      } else {
+        renderDesignsFeed();
+      }
+    }
+
+    // SHOP MOBILE TABS (3 TABS)
+    function switchShopTab(tab) {
+      appData.activeShopTab = tab;
+      ['categories', 'orders', 'favorites'].forEach(t => {
+        const el = document.getElementById(`shopTab_${t}`);
+        el.className = t === tab ? 'p-2 rounded-lg flex flex-col items-center text-mp-maroon font-bold text-xs bg-orange-50' : 'p-2 rounded-lg flex flex-col items-center text-slate-500 font-bold text-xs hover:bg-slate-50';
+      });
+
+      if(tab === 'favorites') {
+        const favs = Object.values(appData.buyers).filter(b => b.isFav);
+        let html = `<div class="bg-white p-4 rounded-xl shadow space-y-2"><h3 class="font-bold text-mp-maroon text-sm">⭐ Favorite Customers</h3>`;
+        favs.forEach(f => {
+          html += `<div class="p-2 border-b flex justify-between text-xs"><span><b>${f.name}</b> (${f.place})</span><span>📞 ${f.phone}</span></div>`;
+        });
+        html += `</div>`;
+        document.getElementById('designsFeedContainer').innerHTML = html;
+      } else if(tab === 'orders') {
+        document.getElementById('designsFeedContainer').innerHTML = `<div class="bg-white p-4 rounded-xl shadow text-xs">📦 All Orders Feed (Newest First)</div>`;
+      } else {
+        renderBuyersList();
+      }
+    }
+
+    renderEverything();
+  </script>
+</body>
+</html>
