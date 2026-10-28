@@ -204,7 +204,7 @@
     function handleShopLogin() {
       const u = document.getElementById('shopUser').value.trim();
       const p = document.getElementById('shopPass').value.trim();
-      if(u === 'shop' && p === 'mp1234') {
+     if((u === 'shop' && p === 'mp1234') || (u === 'Mumbai29' && p === 'MU2000')) {
         sessionStorage.setItem('mp_shop_auth', '1');
         initShopApp();
       } else {
