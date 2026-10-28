@@ -1,0 +1,817 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="theme-color" content="#68150f">
+  <title>Mumbai Prints - Super Admin</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    :root { --mp-maroon: #68150f; --mp-maroon-dark: #4e0e09; --mp-orange: #eb4d26; --mp-bg: #fdf8f6; }
+    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: var(--mp-bg); }
+    .bg-mp-maroon { background-color: var(--mp-maroon); }
+    .bg-mp-maroon-dark { background-color: var(--mp-maroon-dark); }
+    .bg-mp-orange { background-color: var(--mp-orange); }
+    .text-mp-maroon { color: var(--mp-maroon); }
+    .text-mp-orange { color: var(--mp-orange); }
+    .border-mp-maroon { border-color: var(--mp-maroon); }
+    .border-mp-orange { border-color: var(--mp-orange); }
+    .date-divider { display: flex; align-items: center; text-align: center; margin: 18px 0 12px 0; }
+    .date-divider::before, .date-divider::after { content: ''; flex: 1; border-bottom: 2px solid #e7d5cf; }
+    .date-divider:not(:empty)::before { margin-right: 12px; }
+    .date-divider:not(:empty)::after { margin-left: 12px; }
+  </style>
+</head>
+<body class="min-h-screen pb-16 text-slate-800">
+
+  <!-- ADMIN LOGIN SCREEN -->
+  <section id="adminLoginSection" class="max-w-md mx-auto mt-16 p-4">
+    <div class="bg-white rounded-2xl shadow-xl border-2 border-orange-200 overflow-hidden">
+      <div class="bg-mp-maroon text-white p-6 text-center border-b-4 border-mp-orange">
+        <div class="w-14 h-14 bg-white text-mp-maroon font-black text-2xl rounded-xl mx-auto flex items-center justify-center border-2 border-mp-orange shadow mb-2">MP</div>
+        <h2 class="text-xl font-black uppercase tracking-wide">Mumbai Prints</h2>
+        <p class="text-xs text-orange-200 tracking-widest uppercase mt-0.5">👑 Super Admin Portal (Level 1)</p>
+      </div>
+      <div class="p-6 space-y-4 text-xs">
+        <div>
+          <label class="block font-bold text-slate-700 uppercase mb-1">Admin Username</label>
+          <input type="text" id="adminUser" placeholder="admin" class="w-full border-2 border-slate-200 rounded-lg p-2.5 text-sm focus:outline-none focus:border-mp-orange">
+        </div>
+        <div>
+          <label class="block font-bold text-slate-700 uppercase mb-1">Admin Password</label>
+          <input type="password" id="adminPass" onkeydown="if(event.key==='Enter') handleAdminLogin()" placeholder="mumbaiprints99" class="w-full border-2 border-slate-200 rounded-lg p-2.5 text-sm focus:outline-none focus:border-mp-orange">
+        </div>
+        <button onclick="handleAdminLogin()" class="w-full bg-mp-maroon hover:bg-mp-maroon-dark text-white font-black py-3 rounded-xl shadow-md text-sm uppercase tracking-wider transition">
+          Login as Super Admin →
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- MAIN ADMIN APP -->
+  <div id="adminMainApp" class="hidden">
+    <header class="bg-mp-maroon text-white shadow-md border-b-4 border-mp-orange sticky top-0 z-40">
+      <div class="max-w-7xl mx-auto p-3.5 flex flex-wrap justify-between items-center gap-3">
+        <div class="flex items-center gap-3">
+          <div class="bg-white text-mp-maroon font-black text-xl px-2.5 py-1 rounded shadow border-2 border-mp-orange">MP</div>
+          <div>
+            <div class="flex items-center gap-2">
+              <h1 class="text-xl font-black tracking-wide uppercase">Mumbai Prints</h1>
+              <span class="text-[10px] bg-amber-400 text-slate-950 font-extrabold px-2 py-0.5 rounded-full uppercase">👑 Super Admin</span>
+            </div>
+            <p class="text-[11px] text-orange-200 font-medium tracking-widest uppercase">QSP is our USP</p>
+          </div>
+        </div>
+        <div class="flex items-center gap-2">
+          <button onclick="openEditAboutModal()" class="bg-orange-900/80 hover:bg-orange-800 border border-orange-400 text-white text-xs font-bold px-3 py-1.5 rounded-lg">⚙️ Edit About Us</button>
+          <button onclick="adminLogout()" class="bg-red-700 hover:bg-red-800 text-white text-xs font-bold px-3 py-1.5 rounded-lg">Logout</button>
+        </div>
+      </div>
+      <div class="bg-mp-maroon-dark/95 border-t border-orange-900/60 px-4 py-2">
+        <div id="internalCategoriesBar" class="max-w-7xl mx-auto flex flex-wrap items-center gap-1.5"></div>
+      </div>
+    </header>
+
+    <!-- 3-COLUMN WORKSPACE -->
+    <main class="max-w-7xl mx-auto p-4 grid grid-cols-1 lg:grid-cols-12 gap-5 mt-1">
+      
+      <!-- LEFT COLUMN: FOLDERS + BUYERS -->
+      <div class="lg:col-span-3 space-y-5">
+        <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+          <div class="bg-[#fcedea] p-3 border-b border-orange-100 flex justify-between items-center">
+            <h2 class="font-bold text-mp-maroon text-xs uppercase">📂 Fabric Folders</h2>
+            <button onclick="addNewFabricFolder()" class="bg-mp-orange hover:bg-orange-700 text-white text-xs px-2.5 py-1 rounded font-bold">+ New Folder</button>
+          </div>
+          <div id="fabricFolderList" class="divide-y divide-slate-100 max-h-64 overflow-y-auto text-sm"></div>
+        </div>
+
+        <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+          <div class="bg-[#fcedea] p-3 border-b border-orange-100">
+            <div class="flex justify-between items-center">
+              <h2 class="font-bold text-mp-maroon text-xs uppercase" id="activeCatListTitle">👥 Buyers</h2>
+              <button onclick="openAddBuyerModal()" class="bg-mp-maroon hover:bg-mp-maroon-dark text-white text-[11px] px-2.5 py-1 rounded font-bold">+ Add Buyer</button>
+            </div>
+            <p class="text-[11px] font-semibold text-mp-orange mt-0.5" id="activeCatPlaceSubtitle">📍 Place</p>
+          </div>
+          <div id="buyersListContainer" class="divide-y divide-slate-100 max-h-96 overflow-y-auto text-sm"></div>
+        </div>
+      </div>
+
+      <!-- CENTER COLUMN: BULK UPLOAD + DESIGNS FEED -->
+      <div class="lg:col-span-5 space-y-5">
+        <div class="bg-white rounded-xl shadow-sm border-2 border-orange-300 p-4">
+          <div class="flex flex-wrap justify-between items-center gap-2 mb-3 border-b border-orange-100 pb-2">
+            <h3 class="font-bold text-mp-maroon text-sm">📤 Bulk Photo Upload (100–150+)</h3>
+            <button onclick="simulateBulk100Photos()" class="bg-amber-100 hover:bg-amber-200 text-amber-900 border border-amber-300 text-xs font-bold px-2.5 py-1 rounded">⚡ 100 Photos Demo</button>
+          </div>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+            <div>
+              <label class="block font-bold text-slate-700 mb-1">1. Fabric Folder</label>
+              <select id="uploadFolderSelect" class="w-full border border-slate-300 rounded p-2 font-semibold"></select>
+            </div>
+            <div>
+              <label class="block font-bold text-slate-700 mb-1">2. Target Category</label>
+              <select id="uploadCategorySelect" class="w-full border border-orange-300 bg-orange-50 text-mp-maroon rounded p-2 font-bold"></select>
+            </div>
+            <div>
+              <label class="block font-bold text-slate-700 mb-1">3. Lot / Title Prefix</label>
+              <input type="text" id="uploadLotPrefix" placeholder="e.g. Festive Lot" class="w-full border border-slate-300 rounded p-2">
+            </div>
+            <div>
+              <label class="block font-bold text-slate-700 mb-1">4. Date Label</label>
+              <select id="uploadDateSelect" class="w-full border border-slate-300 rounded p-2">
+                <option value="Today — 28 Oct 2026">Today — 28 Oct 2026</option>
+                <option value="Yesterday — 27 Oct 2026">Yesterday — 27 Oct 2026</option>
+              </select>
+            </div>
+            <div class="sm:col-span-2">
+              <label class="block font-bold text-slate-700 mb-1">5. Select Design Photos</label>
+              <input type="file" id="uploadPhotosInput" multiple accept="image/*" class="w-full text-xs text-slate-600 file:mr-3 file:py-1.5 file:px-3 file:rounded file:border-0 file:bg-orange-100 file:text-mp-maroon font-semibold cursor-pointer">
+            </div>
+          </div>
+          <button onclick="handleBulkUploadSubmit()" class="mt-3.5 w-full bg-mp-maroon hover:bg-mp-maroon-dark text-white font-bold py-2.5 rounded-lg shadow text-xs uppercase tracking-wider">
+            🚀 Upload & Broadcast to Category
+          </button>
+        </div>
+
+        <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-4">
+          <div class="flex justify-between items-center border-b border-slate-200 pb-3 mb-2">
+            <div>
+              <span class="text-[11px] uppercase font-bold text-mp-orange">Active Folder Feed:</span>
+              <h2 id="activeFolderHeading" class="text-xl font-bold text-mp-maroon">Ajrakh Print</h2>
+            </div>
+            <span id="designsTotalBadge" class="bg-orange-100 text-mp-maroon text-xs font-bold px-3 py-1 rounded-full border border-orange-200">0 Designs</span>
+          </div>
+          <div id="designsFeedContainer" class="space-y-4 max-h-[600px] overflow-y-auto pr-1"></div>
+        </div>
+      </div>
+
+      <!-- RIGHT COLUMN: 1-ON-1 CHAT & ALL ORDERS -->
+      <div class="lg:col-span-4 space-y-4">
+        <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden sticky top-24 flex flex-col h-[620px]">
+          <div class="grid grid-cols-2 bg-mp-maroon-dark text-white text-xs font-bold border-b border-orange-900">
+            <button id="rightTabChatBtn" onclick="switchRightPanel('chat')" class="py-2.5 bg-mp-orange text-white">💬 1-on-1 Buyer Chat</button>
+            <button id="rightTabOrdersBtn" onclick="switchRightPanel('orders')" class="py-2.5 text-orange-200 hover:text-white">📦 All Orders (<span id="orderCountBadge">0</span>)</button>
+          </div>
+
+          <div id="rightChatContainer" class="flex-1 flex flex-col overflow-hidden">
+            <div class="bg-mp-maroon text-white p-3 border-b-2 border-mp-orange">
+              <div class="flex justify-between items-center text-[10px] uppercase font-bold text-orange-200">
+                <span id="chatHeaderCategoryBadge">Category 1</span>
+                <span class="bg-mp-orange px-1.5 py-0.5 rounded text-white">Direct 1-on-1</span>
+              </div>
+              <h3 class="font-bold text-sm mt-1 truncate" id="activeChatTargetTitle">💬 Select Buyer</h3>
+              <p class="text-[11px] text-orange-200" id="chatSubInfo"></p>
+            </div>
+            <div id="chatMessagesArea" class="flex-1 p-3 overflow-y-auto space-y-3 bg-[#f7f1ee] text-xs"></div>
+            <div class="p-2.5 bg-slate-50 border-t border-slate-200 flex gap-1.5">
+              <input type="text" id="chatMessageInput" onkeydown="if(event.key==='Enter') sendChatMessage()" placeholder="Type reply to buyer..." class="flex-1 border border-slate-300 rounded-lg px-2.5 py-2 text-xs focus:outline-none focus:border-mp-orange">
+              <button onclick="sendChatMessage()" class="bg-mp-maroon hover:bg-mp-maroon-dark text-white font-bold px-3.5 py-2 rounded-lg text-xs">Send</button>
+            </div>
+          </div>
+
+          <div id="rightOrdersContainer" class="hidden flex-1 p-3 overflow-y-auto space-y-2.5 bg-[#f7f1ee] text-xs"></div>
+        </div>
+      </div>
+
+    </main>
+  </div>
+
+  <!-- MODAL: ADD BUYER WITH FREE SMS & WHATSAPP 1-CLICK INVITE -->
+  <div id="addBuyerModal" class="hidden fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl max-w-md w-full p-5 shadow-2xl border-2 border-mp-orange space-y-4 text-xs">
+      <div class="flex justify-between items-center border-b pb-2">
+        <h3 class="text-base font-black text-mp-maroon uppercase">➕ Add Buyer (SMS & WhatsApp Invite)</h3>
+        <button onclick="closeAddBuyerModal()" class="text-slate-400 hover:text-slate-700 font-bold text-lg">✕</button>
+      </div>
+      <div>
+        <label class="block font-bold text-slate-700 mb-1">1. Customer / Shop Name *</label>
+        <input type="text" id="newBuyerName" placeholder="XYZ Textile" class="w-full border-2 rounded-lg p-2.5 text-sm">
+      </div>
+      <div>
+        <label class="block font-bold text-slate-700 mb-1">2. Mobile Number (10 Digits) *</label>
+        <input type="tel" id="newBuyerPhone" placeholder="8893173438" class="w-full border-2 rounded-lg p-2.5 text-sm">
+      </div>
+      <div>
+        <label class="block font-bold text-slate-700 mb-1">3. Place / City *</label>
+        <input type="text" id="newBuyerPlace" placeholder="Ernakulam, Tamil Nadu, Kottayam, Alappuzha, or Other" class="w-full border-2 rounded-lg p-2.5 text-sm">
+        <p class="text-[10px] text-slate-500 mt-1">Auto-routes to matching Category, or <b>Category X</b> if other place.</p>
+      </div>
+      <button onclick="confirmAddBuyerWithSMS()" class="w-full bg-mp-maroon hover:bg-mp-maroon-dark text-white font-black py-3 rounded-xl uppercase tracking-wider shadow">
+        Add Buyer & Create Invite Link
+      </button>
+      <div id="smsPreviewBox" class="hidden bg-green-50 border-2 border-green-300 rounded-xl p-3.5 space-y-2.5 text-slate-800"></div>
+    </div>
+  </div>
+
+  <!-- MODAL: EDIT ABOUT US -->
+  <div id="editAboutModal" class="hidden fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl max-w-md w-full p-5 shadow-2xl border-2 border-mp-orange space-y-3 text-xs">
+      <div class="flex justify-between items-center border-b pb-2">
+        <h3 class="text-base font-black text-mp-maroon uppercase">⚙️ Edit "About Us" Details</h3>
+        <button onclick="document.getElementById('editAboutModal').classList.add('hidden')" class="text-slate-400 font-bold text-lg">✕</button>
+      </div>
+      <div>
+        <label class="font-bold">Primary Phone Number</label>
+        <input type="text" id="abtPhone1" class="w-full border rounded p-2 mt-1">
+      </div>
+      <div>
+        <label class="font-bold">Secondary Phone Number</label>
+        <input type="text" id="abtPhone2" class="w-full border rounded p-2 mt-1">
+      </div>
+      <div>
+        <label class="font-bold">Email ID</label>
+        <input type="email" id="abtEmail" class="w-full border rounded p-2 mt-1">
+      </div>
+      <div>
+        <label class="font-bold">Instagram Link</label>
+        <input type="text" id="abtInsta" class="w-full border rounded p-2 mt-1">
+      </div>
+      <div>
+        <label class="font-bold">Gratitude Message (English)</label>
+        <textarea id="abtMsg" rows="3" class="w-full border rounded p-2 mt-1"></textarea>
+      </div>
+      <button onclick="saveAboutUsDetails()" class="w-full bg-mp-maroon text-white font-bold py-2.5 rounded-xl uppercase">Save Changes</button>
+    </div>
+  </div>
+
+  <script>
+    const STORAGE_KEY = 'mumbai_prints_master_db_v1';
+
+    const defaultDB = {
+      folders: ['Ajrakh Print', 'DJ Material', '3D Print', 'DCM', '320 Cut', '3 Meter Cut'],
+      categories: {
+        cat1: { id: 'cat1', name: 'Category 1', place: 'Ernakulam', buyerIds: ['b1'] },
+        cat2: { id: 'cat2', name: 'Category 2', place: 'Tamil Nadu', buyerIds: ['b2'] },
+        cat3: { id: 'cat3', name: 'Category 3', place: 'Kottayam', buyerIds: ['b3'] },
+        cat4: { id: 'cat4', name: 'Category 4', place: 'Alappuzha', buyerIds: ['b4'] },
+        catX: { id: 'catX', name: 'Category X', place: 'Other Places', buyerIds: [] }
+      },
+      buyers: {
+        b1: { id: 'b1', name: 'Kochi Fashion Hub', phone: '9847011223', place: 'Ernakulam', nickname: 'Salim (Kochi)', catKey: 'cat1', isFav: true },
+        b2: { id: 'b2', name: 'Chennai Silks', phone: '9840055667', place: 'Tamil Nadu', nickname: 'Murugan', catKey: 'cat2', isFav: false },
+        b3: { id: 'b3', name: 'Kottayam Textorium', phone: '9447088990', place: 'Kottayam', nickname: 'Thomas', catKey: 'cat3', isFav: true },
+        b4: { id: 'b4', name: 'Alleppey Collections', phone: '9446033441', place: 'Alappuzha', nickname: 'Anil', catKey: 'cat4', isFav: false }
+      },
+      chats: {
+        b1: [
+          { from: 'shop', sender: 'Mumbai Prints', text: 'Welcome to Mumbai Prints Gold Customer Family! Check our folders for latest designs.', time: '10:00 AM' }
+        ]
+      },
+      orders: [
+        { id: 'ord1', buyerId: 'b1', designId: 1, designTitle: 'Ajrakh Pure Cotton #1', img: 'https://images.unsplash.com/photo-1620799140408-edc6dcb6d633?auto=format&fit=crop&w=500&q=80', qty: '25 Meters / 5 Sets', time: 'Today, 10:15 AM' }
+      ],
+      designs: [
+        { id: 1, folder: 'Ajrakh Print', title: 'Ajrakh Pure Cotton #1', dateGroup: 'Today — 28 Oct 2026', targetCat: 'all', targetLabel: 'All Categories', img: 'https://images.unsplash.com/photo-1620799140408-edc6dcb6d633?auto=format&fit=crop&w=500&q=80', favBy: { b1: true } },
+        { id: 2, folder: 'DJ Material', title: 'DJ Material Gold Print #1', dateGroup: 'Today — 28 Oct 2026', targetCat: 'all', targetLabel: 'All Categories', img: 'https://images.unsplash.com/photo-1584917865442-de89df76afd3?auto=format&fit=crop&w=500&q=80', favBy: {} }
+      ],
+      aboutUs: {
+        phone1: '8893173438',
+        phone2: 'Add 2nd Number',
+        email: 'mumbaiprint18@gmail.com',
+        instagram: 'https://instagram.com/mumbaiprints',
+        message: 'Thank you so much for showing your trust in us. We will always stand by your side to support you. Thank you so much!'
+      }
+    };
+
+    let db = JSON.parse(localStorage.getItem(STORAGE_KEY)) || defaultDB;
+    function saveDB() { localStorage.setItem(STORAGE_KEY, JSON.stringify(db)); }
+
+    let activeCategoryKey = 'cat1';
+    let activeFolder = db.folders[0] || 'Ajrakh Print';
+    let activeChatBuyerId = 'b1';
+    let rightPanelMode = 'chat';
+
+    // HELPER: BUILD INVITE LINKS (SMS & WHATSAPP)
+    function buildInviteLinks(name, phone, place) {
+      const baseUrl = window.location.href.split('?')[0].replace('admin.html', 'customer.html');
+      const inviteLink = `${baseUrl}?invite=1&name=${encodeURIComponent(name)}&phone=${encodeURIComponent(phone)}&place=${encodeURIComponent(place)}`;
+      const smsText = `Welcome ${name}! You have been added to the Mumbai Prints Gold Customer Family. Just click the below link and tap Join Now to access our app: ${inviteLink}`;
+      const digitsOnly = phone.replace(/\D/g, '');
+      const waPhone = (digitsOnly.length === 10) ? '91' + digitsOnly : digitsOnly;
+      const waUrl = `https://wa.me/${waPhone}?text=${encodeURIComponent(smsText)}`;
+      const smsUrl = `sms:${phone}?body=${encodeURIComponent(smsText)}`;
+      return { inviteLink, smsText, waUrl, smsUrl };
+    }
+
+    function handleAdminLogin() {
+      const u = document.getElementById('adminUser').value.trim();
+      const p = document.getElementById('adminPass').value.trim();
+      if(u === 'admin' && p === 'mumbaiprints99') {
+        sessionStorage.setItem('mp_admin_auth', '1');
+        initAdminApp();
+      } else {
+        alert('Invalid Admin Credentials! Use: admin / mumbaiprints99');
+      }
+    }
+
+    function adminLogout() {
+      sessionStorage.removeItem('mp_admin_auth');
+      location.reload();
+    }
+
+    function initAdminApp() {
+      if(sessionStorage.getItem('mp_admin_auth') === '1') {
+        document.getElementById('adminLoginSection').classList.add('hidden');
+        document.getElementById('adminMainApp').classList.remove('hidden');
+        renderEverything();
+      }
+    }
+
+    function matchPlaceToCategory(placeStr) {
+      const p = (placeStr || '').trim().toLowerCase();
+      for(let key of Object.keys(db.categories)) {
+        if(key !== 'catX' && db.categories[key].place.toLowerCase() === p) {
+          return key;
+        }
+      }
+      return 'catX';
+    }
+
+    function renderEverything() {
+      saveDB();
+      renderCategoryBar();
+      renderFolders();
+      renderBuyersList();
+      renderUploadDropdowns();
+      renderDesignsFeed();
+      renderRightPanel();
+    }
+
+    // 1. CATEGORY BAR
+    function renderCategoryBar() {
+      const bar = document.getElementById('internalCategoriesBar');
+      bar.innerHTML = '';
+      Object.values(db.categories).forEach(cat => {
+        const isActive = activeCategoryKey === cat.id;
+        const btn = document.createElement('button');
+        btn.className = `px-2.5 py-1 rounded text-xs font-bold transition flex items-center gap-1.5 ${
+          isActive ? 'bg-mp-orange text-white shadow' : 'bg-mp-maroon text-orange-100 hover:bg-orange-800'
+        }`;
+        btn.innerHTML = `<span>${cat.name}: ${cat.place} (${cat.buyerIds.length})</span>`;
+        btn.onclick = () => {
+          activeCategoryKey = cat.id;
+          if(cat.buyerIds.length > 0) activeChatBuyerId = cat.buyerIds[0];
+          renderEverything();
+        };
+
+        const editIcon = document.createElement('span');
+        editIcon.className = 'text-[10px] bg-black/25 px-1 rounded hover:bg-black/40';
+        editIcon.innerText = '✏️';
+        editIcon.onclick = (e) => { e.stopPropagation(); editCategoryPrompt(cat.id); };
+        btn.appendChild(editIcon);
+        bar.appendChild(btn);
+      });
+
+      const addBtn = document.createElement('button');
+      addBtn.className = 'bg-amber-400 hover:bg-amber-300 text-slate-950 font-extrabold px-2.5 py-1 rounded text-xs ml-1';
+      addBtn.innerText = '+ Add Category';
+      addBtn.onclick = () => {
+        const name = prompt('Enter New Category Name:', 'Category 5');
+        if(!name) return;
+        const place = prompt('Enter Place Name for this Category:', 'Calicut');
+        if(!place) return;
+        const newKey = 'cat_' + Date.now();
+        db.categories[newKey] = { id: newKey, name: name.trim(), place: place.trim(), buyerIds: [] };
+        activeCategoryKey = newKey;
+        renderEverything();
+      };
+      bar.appendChild(addBtn);
+    }
+
+    function editCategoryPrompt(catKey) {
+      const cat = db.categories[catKey];
+      const newName = prompt('Edit Category Name:', cat.name);
+      if(!newName) return;
+      const newPlace = prompt('Edit Category Place:', cat.place);
+      if(!newPlace) return;
+      cat.name = newName.trim();
+      cat.place = newPlace.trim();
+      renderEverything();
+    }
+
+    // 2. FABRIC FOLDERS
+    function renderFolders() {
+      const list = document.getElementById('fabricFolderList');
+      list.innerHTML = '';
+      db.folders.forEach(f => {
+        const isActive = activeFolder === f;
+        const div = document.createElement('div');
+        div.className = `p-2.5 flex justify-between items-center cursor-pointer transition ${
+          isActive ? 'bg-orange-50 border-l-4 border-mp-orange font-bold text-mp-maroon' : 'hover:bg-slate-50 text-slate-700'
+        }`;
+        div.onclick = () => { activeFolder = f; renderEverything(); };
+        div.innerHTML = `
+          <span>📁 ${f}</span>
+          <div class="flex gap-1">
+            <button onclick="event.stopPropagation(); renameFolder('${f}')" class="text-[10px] bg-orange-100 text-mp-maroon px-1.5 py-0.5 rounded font-bold">Rename</button>
+            <button onclick="event.stopPropagation(); deleteFolder('${f}')" class="text-[10px] bg-red-100 text-red-700 px-1.5 py-0.5 rounded font-bold">Del</button>
+          </div>
+        `;
+        list.appendChild(div);
+      });
+    }
+
+    function addNewFabricFolder() {
+      const name = prompt('Enter New Fabric Folder Name:');
+      if(name && name.trim()) {
+        db.folders.push(name.trim());
+        activeFolder = name.trim();
+        renderEverything();
+      }
+    }
+
+    function renameFolder(oldName) {
+      const newName = prompt('Rename Folder:', oldName);
+      if(newName && newName.trim()) {
+        db.folders = db.folders.map(f => f === oldName ? newName.trim() : f);
+        db.designs.forEach(d => { if(d.folder === oldName) d.folder = newName.trim(); });
+        activeFolder = newName.trim();
+        renderEverything();
+      }
+    }
+
+    function deleteFolder(fName) {
+      if(confirm(`Delete folder "${fName}" and its photos?`)) {
+        db.folders = db.folders.filter(f => f !== fName);
+        db.designs = db.designs.filter(d => d.folder !== fName);
+        activeFolder = db.folders[0] || '';
+        renderEverything();
+      }
+    }
+
+    // 3. BUYERS LIST (WITH QUICK SMS & WHATSAPP INVITE BUTTONS)
+    function renderBuyersList() {
+      const activeCat = db.categories[activeCategoryKey];
+      document.getElementById('activeCatListTitle').innerText = `👥 ${activeCat.name} Buyers (${activeCat.buyerIds.length})`;
+      document.getElementById('activeCatPlaceSubtitle').innerText = `📍 Place: ${activeCat.place}`;
+
+      const list = document.getElementById('buyersListContainer');
+      list.innerHTML = '';
+
+      if(activeCat.buyerIds.length === 0) {
+        list.innerHTML = `<div class="p-4 text-xs text-slate-400 text-center">No buyers in ${activeCat.name} yet.</div>`;
+        return;
+      }
+
+      activeCat.buyerIds.forEach(id => {
+        const b = db.buyers[id];
+        if(!b) return;
+        const isSelected = activeChatBuyerId === id;
+        const inv = buildInviteLinks(b.name, b.phone, b.place);
+
+        const div = document.createElement('div');
+        div.className = `p-2.5 flex justify-between items-start cursor-pointer transition ${
+          isSelected ? 'bg-orange-100/80 border-l-4 border-mp-maroon font-bold' : 'hover:bg-slate-50'
+        }`;
+        div.onclick = () => { activeChatBuyerId = id; rightPanelMode = 'chat'; renderRightPanel(); renderBuyersList(); };
+
+        let shiftOptions = Object.values(db.categories).map(c =>
+          `<option value="${c.id}" ${c.id === b.catKey ? 'selected' : ''}>${c.name}</option>`
+        ).join('');
+
+        div.innerHTML = `
+          <div class="w-full">
+            <div class="text-xs text-slate-900 flex items-center justify-between">
+              <span>${b.nickname ? `${b.nickname} (${b.name})` : b.name}</span>
+              <button onclick="event.stopPropagation(); toggleBuyerFav('${id}')" title="Favorite Customer" class="text-sm">${b.isFav ? '⭐' : '☆'}</button>
+            </div>
+            <div class="text-[10px] text-slate-600 font-normal">📞 ${b.phone} • 📍 ${b.place}</div>
+            <div class="mt-1.5 flex flex-wrap items-center gap-1" onclick="event.stopPropagation()">
+              <a href="${inv.smsUrl}" class="text-[10px] bg-blue-600 text-white px-1.5 py-0.5 rounded font-bold">📲 SMS</a>
+              <a href="${inv.waUrl}" target="_blank" class="text-[10px] bg-green-600 text-white px-1.5 py-0.5 rounded font-bold">🟢 WA Invite</a>
+              <button onclick="setBuyerNickname('${id}')" class="text-[10px] bg-slate-200 hover:bg-slate-300 px-1.5 py-0.5 rounded text-slate-800 font-semibold">✏️ Nick</button>
+              <select onchange="shiftBuyerCategory('${id}', this.value)" class="text-[10px] border border-orange-300 bg-white rounded px-1 py-0.5 font-semibold text-mp-maroon">
+                ${shiftOptions}
+              </select>
+              <button onclick="removeBuyer('${id}')" class="text-[10px] bg-red-100 text-red-700 px-1.5 py-0.5 rounded font-semibold">✕</button>
+            </div>
+          </div>
+        `;
+        list.appendChild(div);
+      });
+    }
+
+    function toggleBuyerFav(id) {
+      db.buyers[id].isFav = !db.buyers[id].isFav;
+      renderEverything();
+    }
+
+    function setBuyerNickname(id) {
+      const b = db.buyers[id];
+      const nick = prompt(`Set Shop/Admin Nickname for ${b.name}:`, b.nickname || '');
+      if(nick !== null) {
+        b.nickname = nick.trim();
+        renderEverything();
+      }
+    }
+
+    function shiftBuyerCategory(buyerId, targetCatKey) {
+      const b = db.buyers[buyerId];
+      if(!b || b.catKey === targetCatKey) return;
+      db.categories[b.catKey].buyerIds = db.categories[b.catKey].buyerIds.filter(x => x !== buyerId);
+      db.categories[targetCatKey].buyerIds.unshift(buyerId);
+      b.catKey = targetCatKey;
+      activeCategoryKey = targetCatKey;
+      renderEverything();
+    }
+
+    function removeBuyer(id) {
+      const b = db.buyers[id];
+      if(confirm(`Remove buyer "${b.name}"?`)) {
+        db.categories[b.catKey].buyerIds = db.categories[b.catKey].buyerIds.filter(x => x !== id);
+        delete db.buyers[id];
+        renderEverything();
+      }
+    }
+
+    function openAddBuyerModal() {
+      document.getElementById('newBuyerName').value = '';
+      document.getElementById('newBuyerPhone').value = '';
+      document.getElementById('newBuyerPlace').value = db.categories[activeCategoryKey]?.place || '';
+      document.getElementById('smsPreviewBox').classList.add('hidden');
+      document.getElementById('addBuyerModal').classList.remove('hidden');
+    }
+
+    function closeAddBuyerModal() {
+      document.getElementById('addBuyerModal').classList.add('hidden');
+    }
+
+    function confirmAddBuyerWithSMS() {
+      const name = document.getElementById('newBuyerName').value.trim();
+      const phone = document.getElementById('newBuyerPhone').value.trim();
+      const place = document.getElementById('newBuyerPlace').value.trim();
+
+      if(!name || !phone || !place) {
+        alert('All 3 details (Name, Mobile Number, and Place) are mandatory!');
+        return;
+      }
+
+      const targetCatKey = matchPlaceToCategory(place);
+      const newId = 'b_' + Date.now();
+      db.buyers[newId] = { id: newId, name, phone, place, nickname: '', catKey: targetCatKey, isFav: false };
+      db.categories[targetCatKey].buyerIds.unshift(newId);
+      db.chats[newId] = [
+        { from: 'shop', sender: 'Mumbai Prints', text: `Welcome ${name}! You have been added to the Mumbai Prints Gold Customer Family.`, time: 'Just now' }
+      ];
+      activeCategoryKey = targetCatKey;
+      activeChatBuyerId = newId;
+      renderEverything();
+
+      const inv = buildInviteLinks(name, phone, place);
+      const box = document.getElementById('smsPreviewBox');
+      box.classList.remove('hidden');
+      box.innerHTML = `
+        <div class="font-bold text-green-900">✅ Added to ${db.categories[targetCatKey].name} (${db.categories[targetCatKey].place})!</div>
+        <div class="text-[11px] bg-white p-2.5 rounded border border-green-200 break-all">${inv.smsText}</div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
+          <a href="${inv.smsUrl}" class="bg-blue-600 hover:bg-blue-700 text-white text-center font-bold py-2.5 rounded-xl shadow">📲 1. Send Free SIM SMS</a>
+          <a href="${inv.waUrl}" target="_blank" class="bg-green-600 hover:bg-green-700 text-white text-center font-bold py-2.5 rounded-xl shadow">🟢 2. WhatsApp 1-Click Invite</a>
+        </div>
+        <button onclick="navigator.clipboard.writeText('${inv.inviteLink}'); alert('Invite link copied!');" class="w-full bg-slate-800 text-white font-bold py-2 rounded-xl mt-1">📋 Copy Invite Link</button>
+      `;
+    }
+
+    // 4. BULK UPLOAD & DESIGNS FEED
+    function renderUploadDropdowns() {
+      document.getElementById('uploadFolderSelect').innerHTML = db.folders.map(f =>
+        `<option value="${f}" ${f === activeFolder ? 'selected' : ''}>${f}</option>`
+      ).join('');
+
+      let catOpts = `<option value="all">🌐 All Categories</option>`;
+      Object.values(db.categories).forEach(c => {
+        catOpts += `<option value="${c.id}" ${c.id === activeCategoryKey ? 'selected' : ''}>🎯 ${c.name} (${c.place})</option>`;
+      });
+      document.getElementById('uploadCategorySelect').innerHTML = catOpts;
+    }
+
+    function handleBulkUploadSubmit() {
+      const folder = document.getElementById('uploadFolderSelect').value;
+      const targetCat = document.getElementById('uploadCategorySelect').value;
+      const targetLabel = document.getElementById('uploadCategorySelect').selectedOptions[0].text;
+      const prefix = document.getElementById('uploadLotPrefix').value.trim() || `${folder} Design`;
+      const dateGroup = document.getElementById('uploadDateSelect').value;
+      const files = document.getElementById('uploadPhotosInput').files;
+
+      if(!files || files.length === 0) {
+        alert('Please select design photos to upload.');
+        return;
+      }
+
+      Array.from(files).forEach((file, idx) => {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          db.designs.unshift({
+            id: Date.now() + idx,
+            folder,
+            title: `${prefix} #${idx + 1}`,
+            dateGroup,
+            targetCat,
+            targetLabel,
+            img: e.target.result,
+            favBy: {}
+          });
+          if(idx === files.length - 1) {
+            activeFolder = folder;
+            renderEverything();
+            alert(`${files.length} photos uploaded & sent to ${targetLabel}!`);
+          }
+        };
+        reader.readAsDataURL(file);
+      });
+    }
+
+    function simulateBulk100Photos() {
+      const folder = activeFolder;
+      const targetCat = activeCategoryKey;
+      const catObj = db.categories[targetCat];
+      for(let i = 100; i >= 1; i--) {
+        db.designs.unshift({
+          id: Date.now() + i,
+          folder,
+          title: `${folder} Lot #${i}`,
+          dateGroup: 'Today — 28 Oct 2026',
+          targetCat,
+          targetLabel: `${catObj.name} (${catObj.place})`,
+          img: 'https://images.unsplash.com/photo-1620799140408-edc6dcb6d633?auto=format&fit=crop&w=400&q=60',
+          favBy: {}
+        });
+      }
+      renderEverything();
+      alert('100 Demo Photos uploaded to ' + folder + '!');
+    }
+
+    function renderDesignsFeed() {
+      document.getElementById('activeFolderHeading').innerText = activeFolder;
+      const container = document.getElementById('designsFeedContainer');
+      container.innerHTML = '';
+
+      const visible = db.designs.filter(d => d.folder === activeFolder);
+      document.getElementById('designsTotalBadge').innerText = `${visible.length} Designs`;
+
+      if(visible.length === 0) {
+        container.innerHTML = `<div class="text-center py-10 text-slate-400 text-sm">No designs in this folder yet.</div>`;
+        return;
+      }
+
+      let lastDate = '';
+      visible.forEach(item => {
+        if(item.dateGroup !== lastDate) {
+          lastDate = item.dateGroup;
+          const div = document.createElement('div');
+          div.className = 'date-divider text-[11px] font-bold text-mp-maroon uppercase tracking-wider';
+          div.innerText = lastDate;
+          container.appendChild(div);
+        }
+
+        const card = document.createElement('div');
+        card.className = 'border border-slate-200 rounded-xl overflow-hidden bg-white shadow-sm';
+        card.innerHTML = `
+          <div class="bg-amber-50 px-3 py-1.5 flex justify-between items-center border-b border-amber-100 text-[11px]">
+            <span class="font-bold text-mp-maroon">🎯 Sent to: ${item.targetLabel || 'All'}</span>
+            <div class="flex gap-2">
+              <button onclick="editDesignPhoto(${item.id})" class="font-bold text-blue-700 hover:underline">✏️ Edit Photo/Title</button>
+              <button onclick="deleteDesignPhoto(${item.id})" class="font-bold text-red-600 hover:underline">🗑️ Delete</button>
+            </div>
+          </div>
+          <img src="${item.img}" class="w-full h-44 object-cover bg-slate-100">
+          <div class="p-3 flex justify-between items-center gap-2">
+            <h4 class="font-bold text-slate-800 text-xs">${item.title}</h4>
+            <span class="text-[10px] text-slate-400">ID: #${String(item.id).slice(-4)}</span>
+          </div>
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    function editDesignPhoto(id) {
+      const d = db.designs.find(x => x.id === id);
+      if(!d) return;
+      const newTitle = prompt('Edit Design Title:', d.title);
+      if(newTitle && newTitle.trim()) {
+        d.title = newTitle.trim();
+        renderEverything();
+      }
+    }
+
+    function deleteDesignPhoto(id) {
+      if(confirm('Delete this sent photo for everyone?')) {
+        db.designs = db.designs.filter(x => x.id !== id);
+        renderEverything();
+      }
+    }
+
+    // 5. RIGHT PANEL: CHAT & ALL ORDERS
+    function switchRightPanel(mode) {
+      rightPanelMode = mode;
+      renderRightPanel();
+    }
+
+    function renderRightPanel() {
+      document.getElementById('orderCountBadge').innerText = db.orders.length;
+      const isChat = rightPanelMode === 'chat';
+      document.getElementById('rightChatContainer').classList.toggle('hidden', !isChat);
+      document.getElementById('rightOrdersContainer').classList.toggle('hidden', isChat);
+      document.getElementById('rightTabChatBtn').className = isChat ? 'py-2.5 bg-mp-orange text-white font-bold' : 'py-2.5 text-orange-200';
+      document.getElementById('rightTabOrdersBtn').className = !isChat ? 'py-2.5 bg-mp-orange text-white font-bold' : 'py-2.5 text-orange-200';
+
+      if(isChat) {
+        const b = db.buyers[activeChatBuyerId];
+        const cat = b ? db.categories[b.catKey] : null;
+        document.getElementById('chatHeaderCategoryBadge').innerText = cat ? `${cat.name} (${cat.place})` : 'No Buyer Selected';
+        document.getElementById('activeChatTargetTitle').innerText = b ? `💬 ${b.nickname || b.name}` : 'Select a buyer';
+        document.getElementById('chatSubInfo').innerText = b ? `📞 ${b.phone} • 📍 ${b.place}` : '';
+
+        const box = document.getElementById('chatMessagesArea');
+        box.innerHTML = '';
+        const msgs = db.chats[activeChatBuyerId] || [];
+        msgs.forEach(m => {
+          const isShop = m.from === 'shop';
+          const div = document.createElement('div');
+          div.className = `flex flex-col ${isShop ? 'items-end' : 'items-start'}`;
+          div.innerHTML = `
+            <div class="max-w-[85%] rounded-xl p-2.5 shadow-sm border ${isShop ? 'bg-[#ffeedd] border-orange-200 text-mp-maroon' : 'bg-white border-slate-200 text-slate-900'}">
+              <div class="text-[10px] font-bold opacity-75">${m.sender} • ${m.time || ''}</div>
+              ${m.productImg ? `<img src="${m.productImg}" class="w-full h-28 object-cover rounded mt-1.5 border"><div class="text-[10px] font-bold mt-1">${m.productTitle || ''}</div>` : ''}
+              <div class="text-xs mt-1 font-medium">${m.text}</div>
+            </div>
+          `;
+          box.appendChild(div);
+        });
+        box.scrollTop = box.scrollHeight;
+      } else {
+        const ordBox = document.getElementById('rightOrdersContainer');
+        ordBox.innerHTML = '';
+        if(db.orders.length === 0) {
+          ordBox.innerHTML = `<div class="text-center py-10 text-slate-400">No orders received yet.</div>`;
+          return;
+        }
+        db.orders.forEach(o => {
+          const b = db.buyers[o.buyerId] || { name: 'Customer', place: 'Unknown', catKey: 'catX' };
+          const cat = db.categories[b.catKey] || { name: 'Category X', place: b.place };
+          const div = document.createElement('div');
+          div.className = 'bg-white p-3 rounded-xl shadow-sm border border-orange-200 space-y-2';
+          div.innerHTML = `
+            <div class="flex justify-between items-start">
+              <span class="bg-mp-maroon text-white text-[10px] font-bold px-2 py-0.5 rounded">${cat.name} (${cat.place})</span>
+              <span class="text-[10px] text-slate-400 font-semibold">${o.time}</span>
+            </div>
+            <div class="flex gap-2.5 items-center">
+              <img src="${o.img}" class="w-14 h-14 object-cover rounded border shrink-0">
+              <div class="flex-1 min-w-0">
+                <div class="font-bold text-slate-900 truncate">👤 ${b.nickname || b.name}</div>
+                <div class="text-[11px] text-slate-600 truncate">👕 ${o.designTitle}</div>
+                <div class="text-xs font-black text-mp-orange mt-0.5">📦 Qty: ${o.qty}</div>
+              </div>
+            </div>
+            <button onclick="activeChatBuyerId='${o.buyerId}'; switchRightPanel('chat');" class="w-full bg-orange-50 hover:bg-orange-100 text-mp-maroon font-bold py-1.5 rounded border border-orange-200 text-[11px]">
+              💬 Open Buyer Chat
+            </button>
+          `;
+          ordBox.appendChild(div);
+        });
+      }
+    }
+
+    function sendChatMessage() {
+      const input = document.getElementById('chatMessageInput');
+      const text = input.value.trim();
+      if(!text || !activeChatBuyerId) return;
+      if(!db.chats[activeChatBuyerId]) db.chats[activeChatBuyerId] = [];
+      db.chats[activeChatBuyerId].push({
+        from: 'shop',
+        sender: 'Mumbai Prints (Admin)',
+        text,
+        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      });
+      input.value = '';
+      renderEverything();
+    }
+
+    // 6. EDIT ABOUT US
+    function openEditAboutModal() {
+      document.getElementById('abtPhone1').value = db.aboutUs.phone1;
+      document.getElementById('abtPhone2').value = db.aboutUs.phone2;
+      document.getElementById('abtEmail').value = db.aboutUs.email;
+      document.getElementById('abtInsta').value = db.aboutUs.instagram;
+      document.getElementById('abtMsg').value = db.aboutUs.message;
+      document.getElementById('editAboutModal').classList.remove('hidden');
+    }
+
+    function saveAboutUsDetails() {
+      db.aboutUs.phone1 = document.getElementById('abtPhone1').value.trim();
+      db.aboutUs.phone2 = document.getElementById('abtPhone2').value.trim();
+      db.aboutUs.email = document.getElementById('abtEmail').value.trim();
+      db.aboutUs.instagram = document.getElementById('abtInsta').value.trim();
+      db.aboutUs.message = document.getElementById('abtMsg').value.trim();
+      saveDB();
+      document.getElementById('editAboutModal').classList.add('hidden');
+      alert('About Us details updated for all customers!');
+    }
+
+    initAdminApp();
+  </script>
+</body>
+</html>

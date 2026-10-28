@@ -1,0 +1,660 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="theme-color" content="#68150f">
+  <title>Mumbai Prints - Shop Mode (Level 2)</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    :root { --mp-maroon: #68150f; --mp-maroon-dark: #4e0e09; --mp-orange: #eb4d26; --mp-bg: #fdf8f6; }
+    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: var(--mp-bg); }
+    .bg-mp-maroon { background-color: var(--mp-maroon); }
+    .bg-mp-maroon-dark { background-color: var(--mp-maroon-dark); }
+    .bg-mp-orange { background-color: var(--mp-orange); }
+    .text-mp-maroon { color: var(--mp-maroon); }
+    .text-mp-orange { color: var(--mp-orange); }
+    .border-mp-orange { border-color: var(--mp-orange); }
+  </style>
+</head>
+<body class="min-h-screen pb-24 text-slate-800">
+
+  <!-- SHOP LOGIN SCREEN -->
+  <section id="shopLoginSection" class="max-w-md mx-auto mt-16 p-4">
+    <div class="bg-white rounded-2xl shadow-xl border-2 border-orange-200 overflow-hidden">
+      <div class="bg-mp-maroon text-white p-6 text-center border-b-4 border-mp-orange">
+        <div class="w-14 h-14 bg-white text-mp-maroon font-black text-2xl rounded-xl mx-auto flex items-center justify-center border-2 border-mp-orange shadow mb-2">MP</div>
+        <h2 class="text-xl font-black uppercase tracking-wide">Mumbai Prints</h2>
+        <p class="text-xs text-orange-200 tracking-widest uppercase mt-0.5">🏪 Shop Mode Login (Level 2)</p>
+      </div>
+      <div class="p-6 space-y-4 text-xs">
+        <div>
+          <label class="block font-bold text-slate-700 uppercase mb-1">Staff Username</label>
+          <input type="text" id="shopUser" placeholder="shop" class="w-full border-2 border-slate-200 rounded-lg p-2.5 text-sm focus:outline-none focus:border-mp-orange">
+        </div>
+        <div>
+          <label class="block font-bold text-slate-700 uppercase mb-1">Staff Password</label>
+          <input type="password" id="shopPass" onkeydown="if(event.key==='Enter') handleShopLogin()" placeholder="mp1234" class="w-full border-2 border-slate-200 rounded-lg p-2.5 text-sm focus:outline-none focus:border-mp-orange">
+        </div>
+        <button onclick="handleShopLogin()" class="w-full bg-mp-maroon hover:bg-mp-maroon-dark text-white font-black py-3 rounded-xl shadow-md text-sm uppercase tracking-wider">
+          Login to Shop Feed →
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- SHOP MAIN APP -->
+  <div id="shopMainApp" class="hidden">
+    <header class="bg-mp-maroon text-white shadow-md border-b-4 border-mp-orange sticky top-0 z-40">
+      <div class="max-w-4xl mx-auto p-3.5 flex justify-between items-center">
+        <div class="flex items-center gap-2.5">
+          <div class="bg-white text-mp-maroon font-black text-lg px-2 py-0.5 rounded border-2 border-mp-orange">MP</div>
+          <div>
+            <h1 class="text-lg font-black uppercase leading-none">Mumbai Prints</h1>
+            <p class="text-[10px] text-orange-200 uppercase tracking-widest mt-0.5">🏪 Shop Mode • QSP is our USP</p>
+          </div>
+        </div>
+        <div class="flex items-center gap-2">
+          <button onclick="toggleStudioModal()" class="bg-mp-orange hover:bg-orange-600 text-white text-xs font-bold px-3 py-1.5 rounded-lg shadow">📤 Upload & Folders</button>
+          <button onclick="shopLogout()" class="bg-mp-maroon-dark text-orange-200 text-xs font-bold px-2.5 py-1.5 rounded-lg border border-orange-800">Logout</button>
+        </div>
+      </div>
+    </header>
+
+    <main class="max-w-4xl mx-auto p-3.5" id="shopDynamicView"></main>
+
+    <!-- 3-TAB BOTTOM NAVIGATION BAR -->
+    <nav class="fixed bottom-0 left-0 right-0 bg-white border-t-2 border-orange-200 shadow-2xl z-40">
+      <div class="max-w-md mx-auto grid grid-cols-3 gap-1 p-1.5 text-center">
+        <button onclick="switchShopBottomTab('categories')" id="shopNav_categories" class="py-2 px-1 rounded-xl flex flex-col items-center justify-center bg-orange-100 text-mp-maroon font-black text-xs">
+          <span class="text-lg leading-none mb-0.5">🗂️</span>
+          <span>Category List</span>
+        </button>
+        <button onclick="switchShopBottomTab('orders')" id="shopNav_orders" class="py-2 px-1 rounded-xl flex flex-col items-center justify-center text-slate-500 font-bold text-xs">
+          <span class="text-lg leading-none mb-0.5">📦</span>
+          <span>Order List (<span id="shopOrdBadge">0</span>)</span>
+        </button>
+        <button onclick="switchShopBottomTab('favorites')" id="shopNav_favorites" class="py-2 px-1 rounded-xl flex flex-col items-center justify-center text-slate-500 font-bold text-xs">
+          <span class="text-lg leading-none mb-0.5">⭐</span>
+          <span>Fav Customers</span>
+        </button>
+      </div>
+    </nav>
+  </div>
+
+  <!-- MODAL: BULK UPLOAD, FOLDERS & SENT PHOTOS CONTROL -->
+  <div id="shopStudioModal" class="hidden fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-3 overflow-y-auto">
+    <div class="bg-white rounded-2xl max-w-2xl w-full p-4 shadow-2xl border-2 border-mp-orange space-y-4 my-8 max-h-[90vh] overflow-y-auto text-xs">
+      <div class="flex justify-between items-center border-b pb-2 sticky top-0 bg-white z-10">
+        <h3 class="text-base font-black text-mp-maroon uppercase">📤 Upload Photos, Folders & Manage Sent Designs</h3>
+        <button onclick="toggleStudioModal()" class="text-slate-500 font-bold text-lg px-2">✕</button>
+      </div>
+
+      <div class="bg-[#fcedea] p-3 rounded-xl border border-orange-200 space-y-2">
+        <div class="flex justify-between items-center">
+          <span class="font-bold text-mp-maroon uppercase">📂 Fabric Folders Control (Add / Rename / Delete)</span>
+          <button onclick="shopAddFolder()" class="bg-mp-orange text-white font-bold px-2.5 py-1 rounded">+ New Folder</button>
+        </div>
+        <div id="shopFoldersChips" class="flex flex-wrap gap-1.5"></div>
+      </div>
+
+      <div class="border-2 border-orange-200 rounded-xl p-3 space-y-3">
+        <div class="flex justify-between items-center">
+          <span class="font-bold text-mp-maroon text-sm">🚀 Bulk Photo Upload (100–150+)</span>
+          <button onclick="shopDemo100Photos()" class="bg-amber-100 text-amber-900 border border-amber-300 font-bold px-2 py-1 rounded">⚡ 100 Photos Demo</button>
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+          <div>
+            <label class="font-bold block mb-1">1. Select Folder</label>
+            <select id="shopUpFolder" class="w-full border rounded p-2 font-semibold"></select>
+          </div>
+          <div>
+            <label class="font-bold block mb-1">2. Target Category</label>
+            <select id="shopUpCat" class="w-full border rounded p-2 bg-orange-50 text-mp-maroon font-bold"></select>
+          </div>
+          <div>
+            <label class="font-bold block mb-1">3. Design Prefix</label>
+            <input type="text" id="shopUpPrefix" placeholder="e.g. New Arrival" class="w-full border rounded p-2">
+          </div>
+          <div>
+            <label class="font-bold block mb-1">4. Select Photos</label>
+            <input type="file" id="shopUpFiles" multiple accept="image/*" class="w-full text-xs">
+          </div>
+        </div>
+        <button onclick="shopSubmitUpload()" class="w-full bg-mp-maroon text-white font-bold py-2.5 rounded-lg uppercase">Upload & Send Now</button>
+      </div>
+
+      <div class="space-y-2">
+        <h4 class="font-bold text-mp-maroon uppercase">🖼️ Manage Sent Photos (Edit / Delete)</h4>
+        <div id="shopSentPhotosList" class="space-y-2 max-h-60 overflow-y-auto"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: ADD BUYER WITH FREE SMS & WHATSAPP 1-CLICK INVITE -->
+  <div id="shopAddBuyerModal" class="hidden fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl max-w-md w-full p-5 shadow-2xl border-2 border-mp-orange space-y-3.5 text-xs">
+      <div class="flex justify-between items-center border-b pb-2">
+        <h3 class="text-base font-black text-mp-maroon uppercase">➕ Add Buyer (SMS & WhatsApp Invite)</h3>
+        <button onclick="document.getElementById('shopAddBuyerModal').classList.add('hidden')" class="text-slate-400 font-bold text-lg">✕</button>
+      </div>
+      <div>
+        <label class="block font-bold mb-1">1. Customer / Shop Name *</label>
+        <input type="text" id="sNewName" placeholder="XYZ Textile" class="w-full border-2 rounded-lg p-2.5 text-sm">
+      </div>
+      <div>
+        <label class="block font-bold mb-1">2. Mobile Number (10 Digits) *</label>
+        <input type="tel" id="sNewPhone" placeholder="8893173438" class="w-full border-2 rounded-lg p-2.5 text-sm">
+      </div>
+      <div>
+        <label class="block font-bold mb-1">3. Place / Location *</label>
+        <input type="text" id="sNewPlace" placeholder="Ernakulam, Tamil Nadu, Kottayam, Alappuzha, Other" class="w-full border-2 rounded-lg p-2.5 text-sm">
+      </div>
+      <button onclick="shopConfirmAddBuyer()" class="w-full bg-mp-maroon text-white font-black py-3 rounded-xl uppercase shadow">Add Buyer & Create Invite Link</button>
+      <div id="sSmsBox" class="hidden bg-green-50 border-2 border-green-300 rounded-xl p-3.5 space-y-2.5"></div>
+    </div>
+  </div>
+
+  <script>
+    const STORAGE_KEY = 'mumbai_prints_master_db_v1';
+    let db = JSON.parse(localStorage.getItem(STORAGE_KEY));
+    if(!db) {
+      db = {
+        folders: ['Ajrakh Print', 'DJ Material', '3D Print', 'DCM', '320 Cut', '3 Meter Cut'],
+        categories: {
+          cat1: { id: 'cat1', name: 'Category 1', place: 'Ernakulam', buyerIds: ['b1'] },
+          cat2: { id: 'cat2', name: 'Category 2', place: 'Tamil Nadu', buyerIds: ['b2'] },
+          cat3: { id: 'cat3', name: 'Category 3', place: 'Kottayam', buyerIds: ['b3'] },
+          cat4: { id: 'cat4', name: 'Category 4', place: 'Alappuzha', buyerIds: ['b4'] },
+          catX: { id: 'catX', name: 'Category X', place: 'Other Places', buyerIds: [] }
+        },
+        buyers: {
+          b1: { id: 'b1', name: 'Kochi Fashion Hub', phone: '9847011223', place: 'Ernakulam', nickname: 'Salim (Kochi)', catKey: 'cat1', isFav: true },
+          b2: { id: 'b2', name: 'Chennai Silks', phone: '9840055667', place: 'Tamil Nadu', nickname: 'Murugan', catKey: 'cat2', isFav: false },
+          b3: { id: 'b3', name: 'Kottayam Textorium', phone: '9447088990', place: 'Kottayam', nickname: 'Thomas', catKey: 'cat3', isFav: true },
+          b4: { id: 'b4', name: 'Alleppey Collections', phone: '9446033441', place: 'Alappuzha', nickname: 'Anil', catKey: 'cat4', isFav: false }
+        },
+        chats: { b1: [{ from: 'shop', sender: 'Mumbai Prints', text: 'Welcome to Mumbai Prints!', time: '10:00 AM' }] },
+        orders: [{ id: 'ord1', buyerId: 'b1', designId: 1, designTitle: 'Ajrakh Pure Cotton #1', img: 'https://images.unsplash.com/photo-1620799140408-edc6dcb6d633?auto=format&fit=crop&w=500&q=80', qty: '25 Meters / 5 Sets', time: 'Today, 10:15 AM' }],
+        designs: [{ id: 1, folder: 'Ajrakh Print', title: 'Ajrakh Pure Cotton #1', dateGroup: 'Today — 28 Oct 2026', targetCat: 'all', targetLabel: 'All Categories', img: 'https://images.unsplash.com/photo-1620799140408-edc6dcb6d633?auto=format&fit=crop&w=500&q=80', favBy: {} }],
+        aboutUs: { phone1: '8893173438', phone2: '', email: 'mumbaiprint18@gmail.com', instagram: '', message: 'Thank you so much for showing your trust in us. We will always stand by your side to support you. Thank you so much!' }
+      };
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(db));
+    }
+    function saveDB() { localStorage.setItem(STORAGE_KEY, JSON.stringify(db)); }
+
+    function buildInviteLinks(name, phone, place) {
+      const baseUrl = window.location.href.split('?')[0].replace('shop.html', 'customer.html');
+      const inviteLink = `${baseUrl}?invite=1&name=${encodeURIComponent(name)}&phone=${encodeURIComponent(phone)}&place=${encodeURIComponent(place)}`;
+      const smsText = `Welcome ${name}! You have been added to the Mumbai Prints Gold Customer Family. Just click the below link and tap Join Now to access our app: ${inviteLink}`;
+      const digitsOnly = phone.replace(/\D/g, '');
+      const waPhone = (digitsOnly.length === 10) ? '91' + digitsOnly : digitsOnly;
+      const waUrl = `https://wa.me/${waPhone}?text=${encodeURIComponent(smsText)}`;
+      const smsUrl = `sms:${phone}?body=${encodeURIComponent(smsText)}`;
+      return { inviteLink, smsText, waUrl, smsUrl };
+    }
+
+    let currentShopTab = 'categories';
+    let drillStep = 'cat_list';
+    let selectedCatKey = 'cat1';
+    let selectedBuyerId = 'b1';
+
+    function handleShopLogin() {
+      const u = document.getElementById('shopUser').value.trim();
+      const p = document.getElementById('shopPass').value.trim();
+      if(u === 'shop' && p === 'mp1234') {
+        sessionStorage.setItem('mp_shop_auth', '1');
+        initShopApp();
+      } else {
+        alert('Invalid Staff Credentials! Use: shop / mp1234');
+      }
+    }
+
+    function shopLogout() {
+      sessionStorage.removeItem('mp_shop_auth');
+      location.reload();
+    }
+
+    function initShopApp() {
+      if(sessionStorage.getItem('mp_shop_auth') === '1') {
+        document.getElementById('shopLoginSection').classList.add('hidden');
+        document.getElementById('shopMainApp').classList.remove('hidden');
+        renderShopView();
+      }
+    }
+
+    function switchShopBottomTab(tab) {
+      currentShopTab = tab;
+      if(tab === 'categories') drillStep = 'cat_list';
+      ['categories', 'orders', 'favorites'].forEach(t => {
+        const btn = document.getElementById('shopNav_' + t);
+        btn.className = (t === tab)
+          ? 'py-2 px-1 rounded-xl flex flex-col items-center justify-center bg-orange-100 text-mp-maroon font-black text-xs'
+          : 'py-2 px-1 rounded-xl flex flex-col items-center justify-center text-slate-500 font-bold text-xs';
+      });
+      renderShopView();
+    }
+
+    function renderShopView() {
+      db = JSON.parse(localStorage.getItem(STORAGE_KEY)) || db;
+      document.getElementById('shopOrdBadge').innerText = db.orders.length;
+      const box = document.getElementById('shopDynamicView');
+      box.innerHTML = '';
+
+      if(currentShopTab === 'categories') {
+        if(drillStep === 'cat_list') {
+          let html = `
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+              <div class="bg-[#fcedea] p-3.5 border-b border-orange-200 flex justify-between items-center">
+                <div>
+                  <h2 class="font-black text-mp-maroon text-sm uppercase">🗂️ Step 1: Select Category</h2>
+                  <p class="text-[11px] text-slate-600">Tap any category to open its Customer List</p>
+                </div>
+                <button onclick="openShopAddBuyer()" class="bg-mp-maroon text-white text-xs font-bold px-3 py-1.5 rounded-lg">+ Add Buyer</button>
+              </div>
+              <div class="divide-y divide-slate-100">
+          `;
+          Object.values(db.categories).forEach(cat => {
+            html += `
+              <div onclick="selectedCatKey='${cat.id}'; drillStep='cust_list'; renderShopView();" class="p-4 flex justify-between items-center hover:bg-orange-50 cursor-pointer transition">
+                <div>
+                  <div class="font-black text-sm text-mp-maroon">${cat.name}</div>
+                  <div class="text-xs text-slate-600 font-semibold">📍 Place: ${cat.place}</div>
+                </div>
+                <div class="flex items-center gap-2">
+                  <span class="bg-orange-100 text-mp-maroon font-bold text-xs px-3 py-1 rounded-full">${cat.buyerIds.length} Buyers</span>
+                  <span class="text-mp-orange font-black text-lg">→</span>
+                </div>
+              </div>
+            `;
+          });
+          html += `</div></div>`;
+          box.innerHTML = html;
+        }
+        else if(drillStep === 'cust_list') {
+          const cat = db.categories[selectedCatKey];
+          let html = `
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+              <div class="bg-[#fcedea] p-3.5 border-b border-orange-200 flex justify-between items-center">
+                <div class="flex items-center gap-2">
+                  <button onclick="drillStep='cat_list'; renderShopView();" class="bg-white border border-orange-300 text-mp-maroon font-bold px-2.5 py-1 rounded-lg text-xs">← Back</button>
+                  <div>
+                    <h2 class="font-black text-mp-maroon text-sm uppercase">👥 ${cat.name} (${cat.place})</h2>
+                    <p class="text-[11px] text-slate-600">Tap a customer to open their 1-on-1 Chat</p>
+                  </div>
+                </div>
+                <button onclick="openShopAddBuyer()" class="bg-mp-maroon text-white text-xs font-bold px-2.5 py-1.5 rounded-lg">+ Add Buyer</button>
+              </div>
+              <div class="divide-y divide-slate-100">
+          `;
+          if(cat.buyerIds.length === 0) {
+            html += `<div class="p-8 text-center text-xs text-slate-400">No customers in ${cat.name} yet.</div>`;
+          } else {
+            cat.buyerIds.forEach(id => {
+              const b = db.buyers[id];
+              if(!b) return;
+              const inv = buildInviteLinks(b.name, b.phone, b.place);
+              let shiftOpts = Object.values(db.categories).map(c =>
+                `<option value="${c.id}" ${c.id === b.catKey ? 'selected' : ''}>${c.name}</option>`
+              ).join('');
+              html += `
+                <div onclick="selectedBuyerId='${id}'; drillStep='chat_view'; renderShopView();" class="p-3.5 flex justify-between items-center hover:bg-orange-50 cursor-pointer">
+                  <div>
+                    <div class="font-bold text-sm text-slate-900 flex items-center gap-1.5">
+                      <span>${b.nickname ? `${b.nickname} (${b.name})` : b.name}</span>
+                      <button onclick="event.stopPropagation(); shopToggleFav('${id}')" class="text-base">${b.isFav ? '⭐' : '☆'}</button>
+                    </div>
+                    <div class="text-xs text-slate-600">📞 ${b.phone} • 📍 ${b.place}</div>
+                    <div class="mt-1.5 flex flex-wrap gap-1.5" onclick="event.stopPropagation()">
+                      <a href="${inv.smsUrl}" class="text-[10px] bg-blue-600 text-white px-2 py-0.5 rounded font-bold">📲 SMS</a>
+                      <a href="${inv.waUrl}" target="_blank" class="text-[10px] bg-green-600 text-white px-2 py-0.5 rounded font-bold">🟢 WA Invite</a>
+                      <select onchange="shopShiftBuyer('${id}', this.value)" class="text-[10px] border border-orange-300 rounded px-1.5 py-0.5 bg-white font-bold text-mp-maroon">${shiftOpts}</select>
+                      <button onclick="shopRemoveBuyer('${id}')" class="text-[10px] bg-red-100 text-red-700 px-2 py-0.5 rounded font-bold">Remove</button>
+                    </div>
+                  </div>
+                  <span class="bg-mp-maroon text-white text-xs font-bold px-3 py-1.5 rounded-xl shrink-0">💬 Chat →</span>
+                </div>
+              `;
+            });
+          }
+          html += `</div></div>`;
+          box.innerHTML = html;
+        }
+        else if(drillStep === 'chat_view') {
+          const b = db.buyers[selectedBuyerId];
+          const cat = b ? db.categories[b.catKey] : { name: 'Category', place: '' };
+          const msgs = db.chats[selectedBuyerId] || [];
+          let msgHtml = msgs.map(m => {
+            const isShop = m.from === 'shop';
+            return `
+              <div class="flex flex-col ${isShop ? 'items-end' : 'items-start'}">
+                <div class="max-w-[82%] rounded-xl p-2.5 shadow-sm border ${isShop ? 'bg-[#ffeedd] border-orange-200 text-mp-maroon' : 'bg-white border-slate-200 text-slate-900'}">
+                  <div class="text-[10px] font-bold opacity-75">${m.sender} • ${m.time || ''}</div>
+                  ${m.productImg ? `<img src="${m.productImg}" class="w-full h-32 object-cover rounded mt-1 border"><div class="text-[10px] font-bold mt-1">${m.productTitle || ''}</div>` : ''}
+                  <div class="text-xs mt-1 font-medium">${m.text}</div>
+                </div>
+              </div>
+            `;
+          }).join('');
+
+          box.innerHTML = `
+            <div class="bg-white rounded-2xl shadow-md border border-slate-200 overflow-hidden flex flex-col h-[72vh]">
+              <div class="bg-mp-maroon text-white p-3 flex justify-between items-center border-b-2 border-mp-orange">
+                <div class="flex items-center gap-2">
+                  <button onclick="drillStep='cust_list'; renderShopView();" class="bg-white/20 hover:bg-white/30 text-white font-bold px-2.5 py-1 rounded text-xs">← Customers</button>
+                  <div>
+                    <div class="font-bold text-sm">💬 ${b ? (b.nickname || b.name) : 'Customer'}</div>
+                    <div class="text-[10px] text-orange-200">${cat.name} (${cat.place}) • 📞 ${b ? b.phone : ''}</div>
+                  </div>
+                </div>
+                <button onclick="shopToggleFav('${selectedBuyerId}')" class="text-lg">${b && b.isFav ? '⭐' : '☆'}</button>
+              </div>
+              <div id="shopChatScroll" class="flex-1 p-3 overflow-y-auto space-y-2.5 bg-[#f7f1ee] text-xs">${msgHtml}</div>
+              <div class="p-2.5 bg-white border-t flex gap-2">
+                <input type="text" id="shopChatIn" onkeydown="if(event.key==='Enter') shopSendChat()" placeholder="Type message to ${b ? b.name : 'buyer'}..." class="flex-1 border-2 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-mp-orange">
+                <button onclick="shopSendChat()" class="bg-mp-maroon text-white font-bold px-4 py-2 rounded-xl text-xs">Send</button>
+              </div>
+            </div>
+          `;
+          const sc = document.getElementById('shopChatScroll');
+          if(sc) sc.scrollTop = sc.scrollHeight;
+        }
+      }
+      else if(currentShopTab === 'orders') {
+        let html = `
+          <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-4 space-y-3">
+            <div class="border-b pb-2 flex justify-between items-center">
+              <div>
+                <h2 class="font-black text-mp-maroon text-sm uppercase">📦 All Categories Order List</h2>
+                <p class="text-[11px] text-slate-500">Newest orders on top • Tap to open customer chat</p>
+              </div>
+              <span class="bg-orange-100 text-mp-maroon font-bold text-xs px-2.5 py-1 rounded-full">${db.orders.length} Orders</span>
+            </div>
+        `;
+        if(db.orders.length === 0) {
+          html += `<div class="text-center py-12 text-xs text-slate-400">No orders received yet.</div>`;
+        } else {
+          db.orders.forEach(o => {
+            const b = db.buyers[o.buyerId] || { name: 'Buyer', place: 'Unknown', catKey: 'catX' };
+            const cat = db.categories[b.catKey] || { name: 'Category X', place: b.place };
+            html += `
+              <div class="p-3 rounded-xl border-2 border-orange-100 bg-orange-50/40 flex flex-col sm:flex-row justify-between gap-3 items-start sm:items-center">
+                <div class="flex gap-3 items-center">
+                  <img src="${o.img}" class="w-16 h-16 object-cover rounded-lg border shrink-0">
+                  <div>
+                    <div class="flex flex-wrap gap-1.5 items-center mb-1">
+                      <span class="bg-mp-maroon text-white text-[10px] font-bold px-2 py-0.5 rounded">${cat.name} (${cat.place})</span>
+                      <span class="bg-orange-200 text-mp-maroon text-[10px] font-bold px-2 py-0.5 rounded">👤 ${b.nickname || b.name}</span>
+                      <span class="text-[10px] text-slate-400">${o.time}</span>
+                    </div>
+                    <div class="text-xs font-bold text-slate-800">👕 Design: ${o.designTitle}</div>
+                    <div class="text-xs font-black text-mp-orange">📦 Ordered Qty: ${o.qty}</div>
+                  </div>
+                </div>
+                <button onclick="selectedBuyerId='${o.buyerId}'; currentShopTab='categories'; drillStep='chat_view'; renderShopView();" class="bg-mp-maroon text-white text-xs font-bold px-3.5 py-2 rounded-xl shrink-0">
+                  💬 Reply in Chat
+                </button>
+              </div>
+            `;
+          });
+        }
+        html += `</div>`;
+        box.innerHTML = html;
+      }
+      else if(currentShopTab === 'favorites') {
+        const favBuyers = Object.values(db.buyers).filter(b => b.isFav);
+        let html = `
+          <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-4 space-y-3">
+            <div class="border-b pb-2 flex justify-between items-center">
+              <div>
+                <h2 class="font-black text-mp-maroon text-sm uppercase">⭐ Favorite Customers List</h2>
+                <p class="text-[11px] text-slate-500">Quick 1-click access to your VIP / Star-marked buyers</p>
+              </div>
+              <span class="bg-amber-100 text-amber-900 font-bold text-xs px-2.5 py-1 rounded-full">${favBuyers.length} Starred</span>
+            </div>
+        `;
+        if(favBuyers.length === 0) {
+          html += `<div class="text-center py-12 text-xs text-slate-400">No favorite customers starred yet. Tap ☆ next to any buyer to star them!</div>`;
+        } else {
+          favBuyers.forEach(b => {
+            const cat = db.categories[b.catKey] || { name: 'Category X', place: b.place };
+            html += `
+              <div class="p-3 rounded-xl border border-slate-200 flex justify-between items-center hover:bg-orange-50">
+                <div>
+                  <div class="font-bold text-sm text-slate-900 flex items-center gap-1.5">
+                    <span>⭐ ${b.nickname ? `${b.nickname} (${b.name})` : b.name}</span>
+                    <span class="bg-orange-100 text-mp-maroon text-[10px] px-2 py-0.5 rounded font-bold">${cat.name}</span>
+                  </div>
+                  <div class="text-xs text-slate-600 mt-0.5">📞 ${b.phone} • 📍 ${b.place}</div>
+                </div>
+                <div class="flex gap-2">
+                  <button onclick="shopToggleFav('${b.id}')" class="text-xs bg-slate-100 px-2.5 py-1.5 rounded-lg font-bold text-slate-600">Unstar</button>
+                  <button onclick="selectedBuyerId='${b.id}'; currentShopTab='categories'; drillStep='chat_view'; renderShopView();" class="bg-mp-maroon text-white text-xs font-bold px-3 py-1.5 rounded-lg">💬 Chat</button>
+                </div>
+              </div>
+            `;
+          });
+        }
+        html += `</div>`;
+        box.innerHTML = html;
+      }
+    }
+
+    function shopToggleFav(id) {
+      db.buyers[id].isFav = !db.buyers[id].isFav;
+      saveDB();
+      renderShopView();
+    }
+
+    function shopShiftBuyer(id, newCatKey) {
+      const b = db.buyers[id];
+      if(!b || b.catKey === newCatKey) return;
+      db.categories[b.catKey].buyerIds = db.categories[b.catKey].buyerIds.filter(x => x !== id);
+      db.categories[newCatKey].buyerIds.unshift(id);
+      b.catKey = newCatKey;
+      saveDB();
+      alert(`Shifted ${b.name} to ${db.categories[newCatKey].name}!`);
+      renderShopView();
+    }
+
+    function shopRemoveBuyer(id) {
+      const b = db.buyers[id];
+      if(confirm(`Remove ${b.name}?`)) {
+        db.categories[b.catKey].buyerIds = db.categories[b.catKey].buyerIds.filter(x => x !== id);
+        delete db.buyers[id];
+        saveDB();
+        renderShopView();
+      }
+    }
+
+    function shopSendChat() {
+      const input = document.getElementById('shopChatIn');
+      const text = input.value.trim();
+      if(!text) return;
+      if(!db.chats[selectedBuyerId]) db.chats[selectedBuyerId] = [];
+      db.chats[selectedBuyerId].push({
+        from: 'shop',
+        sender: 'Mumbai Prints (Shop)',
+        text,
+        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      });
+      saveDB();
+      renderShopView();
+    }
+
+    function toggleStudioModal() {
+      const m = document.getElementById('shopStudioModal');
+      m.classList.toggle('hidden');
+      if(!m.classList.contains('hidden')) renderStudioModalContent();
+    }
+
+    function renderStudioModalContent() {
+      const chips = document.getElementById('shopFoldersChips');
+      chips.innerHTML = db.folders.map(f => `
+        <div class="bg-white border border-orange-300 rounded-lg px-2.5 py-1 flex items-center gap-1.5">
+          <span class="font-bold text-mp-maroon">📁 ${f}</span>
+          <button onclick="shopRenameFolder('${f}')" class="text-[10px] text-blue-600 font-bold">Rename</button>
+          <button onclick="shopDeleteFolder('${f}')" class="text-[10px] text-red-600 font-bold">✕</button>
+        </div>
+      `).join('');
+
+      document.getElementById('shopUpFolder').innerHTML = db.folders.map(f => `<option value="${f}">${f}</option>`).join('');
+      let catOpts = `<option value="all">🌐 All Categories</option>`;
+      Object.values(db.categories).forEach(c => {
+        catOpts += `<option value="${c.id}">${c.name} (${c.place})</option>`;
+      });
+      document.getElementById('shopUpCat').innerHTML = catOpts;
+
+      const sentList = document.getElementById('shopSentPhotosList');
+      sentList.innerHTML = db.designs.slice(0, 30).map(d => `
+        <div class="flex items-center justify-between p-2 border rounded-lg bg-slate-50">
+          <div class="flex items-center gap-2">
+            <img src="${d.img}" class="w-10 h-10 object-cover rounded">
+            <div>
+              <div class="font-bold text-slate-800">${d.title}</div>
+              <div class="text-[10px] text-slate-500">Folder: ${d.folder} • Sent to: ${d.targetLabel || 'All'}</div>
+            </div>
+          </div>
+          <div class="flex gap-2">
+            <button onclick="shopEditPhoto(${d.id})" class="bg-blue-100 text-blue-800 px-2 py-1 rounded font-bold">✏️ Edit</button>
+            <button onclick="shopDeletePhoto(${d.id})" class="bg-red-100 text-red-700 px-2 py-1 rounded font-bold">🗑️ Delete</button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function shopAddFolder() {
+      const n = prompt('New Fabric Folder Name:');
+      if(n && n.trim()) { db.folders.push(n.trim()); saveDB(); renderStudioModalContent(); }
+    }
+
+    function shopRenameFolder(oldN) {
+      const newN = prompt('Rename Folder:', oldN);
+      if(newN && newN.trim()) {
+        db.folders = db.folders.map(f => f === oldN ? newN.trim() : f);
+        db.designs.forEach(d => { if(d.folder === oldN) d.folder = newN.trim(); });
+        saveDB();
+        renderStudioModalContent();
+      }
+    }
+
+    function shopDeleteFolder(fName) {
+      if(confirm(`Delete folder "${fName}"?`)) {
+        db.folders = db.folders.filter(f => f !== fName);
+        saveDB();
+        renderStudioModalContent();
+      }
+    }
+
+    function shopSubmitUpload() {
+      const folder = document.getElementById('shopUpFolder').value;
+      const targetCat = document.getElementById('shopUpCat').value;
+      const targetLabel = document.getElementById('shopUpCat').selectedOptions[0].text;
+      const prefix = document.getElementById('shopUpPrefix').value.trim() || `${folder} Design`;
+      const files = document.getElementById('shopUpFiles').files;
+      if(!files || files.length === 0) { alert('Select at least 1 photo!'); return; }
+
+      Array.from(files).forEach((file, i) => {
+        const r = new FileReader();
+        r.onload = (e) => {
+          db.designs.unshift({
+            id: Date.now() + i,
+            folder,
+            title: `${prefix} #${i + 1}`,
+            dateGroup: 'Today — 28 Oct 2026',
+            targetCat,
+            targetLabel,
+            img: e.target.result,
+            favBy: {}
+          });
+          if(i === files.length - 1) {
+            saveDB();
+            renderStudioModalContent();
+            alert(`${files.length} photos uploaded successfully!`);
+          }
+        };
+        r.readAsDataURL(file);
+      });
+    }
+
+    function shopDemo100Photos() {
+      const folder = document.getElementById('shopUpFolder').value;
+      const targetCat = document.getElementById('shopUpCat').value;
+      const targetLabel = document.getElementById('shopUpCat').selectedOptions[0].text;
+      for(let i = 100; i >= 1; i--) {
+        db.designs.unshift({
+          id: Date.now() + i,
+          folder,
+          title: `${folder} Lot #${i}`,
+          dateGroup: 'Today — 28 Oct 2026',
+          targetCat,
+          targetLabel,
+          img: 'https://images.unsplash.com/photo-1620799140408-edc6dcb6d633?auto=format&fit=crop&w=400&q=60',
+          favBy: {}
+        });
+      }
+      saveDB();
+      renderStudioModalContent();
+      alert('100 Demo Photos uploaded!');
+    }
+
+    function shopEditPhoto(id) {
+      const d = db.designs.find(x => x.id === id);
+      const t = prompt('Edit Design Title:', d.title);
+      if(t && t.trim()) { d.title = t.trim(); saveDB(); renderStudioModalContent(); }
+    }
+
+    function shopDeletePhoto(id) {
+      if(confirm('Delete this sent photo?')) {
+        db.designs = db.designs.filter(x => x.id !== id);
+        saveDB();
+        renderStudioModalContent();
+      }
+    }
+
+    function openShopAddBuyer() {
+      document.getElementById('sNewName').value = '';
+      document.getElementById('sNewPhone').value = '';
+      document.getElementById('sNewPlace').value = db.categories[selectedCatKey]?.place || '';
+      document.getElementById('sSmsBox').classList.add('hidden');
+      document.getElementById('shopAddBuyerModal').classList.remove('hidden');
+    }
+
+    function shopConfirmAddBuyer() {
+      const name = document.getElementById('sNewName').value.trim();
+      const phone = document.getElementById('sNewPhone').value.trim();
+      const place = document.getElementById('sNewPlace').value.trim();
+      if(!name || !phone || !place) { alert('Name, Mobile Number, and Place are required!'); return; }
+
+      let targetKey = 'catX';
+      Object.keys(db.categories).forEach(k => {
+        if(k !== 'catX' && db.categories[k].place.toLowerCase() === place.toLowerCase()) targetKey = k;
+      });
+
+      const id = 'b_' + Date.now();
+      db.buyers[id] = { id, name, phone, place, nickname: '', catKey: targetKey, isFav: false };
+      db.categories[targetKey].buyerIds.unshift(id);
+      db.chats[id] = [{ from: 'shop', sender: 'Mumbai Prints', text: `Welcome ${name}! You have been added to the Mumbai Prints Gold Customer Family.`, time: 'Just now' }];
+      saveDB();
+      renderShopView();
+
+      const inv = buildInviteLinks(name, phone, place);
+      const box = document.getElementById('sSmsBox');
+      box.classList.remove('hidden');
+      box.innerHTML = `
+        <div class="font-bold text-green-900">✅ Added to ${db.categories[targetKey].name} (${db.categories[targetKey].place})!</div>
+        <div class="text-[11px] bg-white p-2.5 rounded border border-green-200 break-all">${inv.smsText}</div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
+          <a href="${inv.smsUrl}" class="bg-blue-600 text-white text-center font-bold py-2.5 rounded-xl shadow">📲 1. Send Free SIM SMS</a>
+          <a href="${inv.waUrl}" target="_blank" class="bg-green-600 text-white text-center font-bold py-2.5 rounded-xl shadow">🟢 2. WhatsApp 1-Click Invite</a>
+        </div>
+        <button onclick="navigator.clipboard.writeText('${inv.inviteLink}'); alert('Invite link copied!');" class="w-full bg-slate-800 text-white font-bold py-2 rounded-xl mt-1">📋 Copy Invite Link</button>
+      `;
+    }
+
+    initShopApp();
+  </script>
+</body>
+</html>
