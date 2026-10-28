@@ -1101,16 +1101,95 @@
   setInterval(pullFromCloud, 2500);
 })();
 </script>
-  <!-- ===== MUMBAI PRINTS: BULK BUYER UPLOAD & WHATSAPP INVITE QUEUE ===== -->
+  <!-- ===== MUMBAI PRINTS: ENGLISH MESSAGES + BULK BUYER UPLOAD ===== -->
 <script>
 (function() {
-  // 1. Add Floating Button in Shop/Admin Panel
+  const customerAppUrl = window.location.origin + window.location.pathname.replace(/shop\.html|admin\.html/i, "customer.html");
+
+  // 1. Standard Professional English Invite Message Generator
+  function buildEnglishInviteMessage(name, phone) {
+    const cleanName = name || "Valued Partner";
+    const link = `${customerAppUrl}?phone=${phone}&name=${encodeURIComponent(cleanName)}`;
+    return `Hello *${cleanName}*,\n\nWelcome to the *Mumbai Prints* Exclusive Digital Catalog! 🌟\n\nExplore our latest textile collections, view new designs, and place your orders directly using the link below:\n👉 ${link}\n\n🔑 *Your Login Mobile Number:* ${phone}\n\nThank you,\n*Team Mumbai Prints*`;
+  }
+
+  // 2. Auto-Convert Existing Single Buyer WhatsApp / SMS Invites to English
+  function convertUrlToEnglish(url) {
+    try {
+      if (!url) return url;
+      const isWa = url.includes("wa.me") || url.includes("whatsapp.com");
+      const isSms = url.startsWith("sms:");
+      if (!isWa && !isSms) return url;
+
+      // Extract 10-digit phone number
+      const phoneMatch = url.match(/(?:91)?(\d{10})/);
+      const phone = phoneMatch ? phoneMatch[1] : "";
+
+      // Try to get buyer name from input field or URL
+      let name = "Valued Partner";
+      const decoded = decodeURIComponent(url);
+      const nameParam = decoded.match(/[?&]name=([^&\s]+)/);
+      if (nameParam && nameParam[1]) {
+        name = decodeURIComponent(nameParam[1]);
+      } else {
+        const inputs = Array.from(document.querySelectorAll("input"));
+        const nameInp = inputs.find(el => el.placeholder && (el.placeholder.toLowerCase().includes("xyz") || el.placeholder.toLowerCase().includes("shop") || el.placeholder.toLowerCase().includes("name")));
+        if (nameInp && nameInp.value.trim()) name = nameInp.value.trim();
+      }
+
+      if (phone) {
+        const engMsg = buildEnglishInviteMessage(name, phone);
+        if (isWa) {
+          return `https://wa.me/91${phone}?text=${encodeURIComponent(engMsg)}`;
+        } else if (isSms) {
+          return `sms:+91${phone}?body=${encodeURIComponent(engMsg.replace(/\*/g, ""))}`;
+        }
+      }
+    } catch (e) {}
+    return url;
+  }
+
+  // Intercept window.open for WhatsApp/SMS links
+  const origWindowOpen = window.open;
+  window.open = function(url, target, features) {
+    const updatedUrl = convertUrlToEnglish(url);
+    return origWindowOpen.call(window, updatedUrl, target, features);
+  };
+
+  // Intercept clicks on any dynamically generated WhatsApp / SMS links or Copy buttons
+  document.addEventListener("click", function(e) {
+    const linkEl = e.target.closest("a");
+    if (linkEl && linkEl.href && !linkEl.classList.contains("mp-wa-send-btn")) {
+      if (linkEl.href.includes("wa.me") || linkEl.href.includes("whatsapp.com") || linkEl.href.startsWith("sms:")) {
+        linkEl.href = convertUrlToEnglish(linkEl.href);
+      }
+    }
+  }, true);
+
+  // Also replace any on-screen Hinglish invite preview text automatically
+  setInterval(() => {
+    document.querySelectorAll("div, p, textarea, span").forEach(el => {
+      if (el.children.length === 0 && el.innerText && (el.innerText.includes("swagat hai") || el.innerText.includes("Namaste"))) {
+        const phoneMatch = el.innerText.match(/\d{10}/);
+        const phone = phoneMatch ? phoneMatch[0] : "";
+        if (phone) {
+          el.innerText = buildEnglishInviteMessage("Customer", phone).replace(/\*/g, "");
+        }
+      }
+      // Convert any Hinglish Notification Toast to English
+      if (el.innerHTML && el.innerHTML.includes("Naya message ya update aaya hai!")) {
+        el.innerHTML = el.innerHTML.replace("Naya message ya update aaya hai!", "New message or order update received!");
+      }
+    });
+  }, 500);
+
+  // 3. Add Floating Button for Bulk Buyer Upload
   const bulkBtn = document.createElement("button");
   bulkBtn.innerHTML = "📋 + Bulk Add Buyers (Excel / List)";
   bulkBtn.style.cssText = "position:fixed;bottom:75px;right:20px;background:#801b1b;color:#fff;border:2px solid #ffcc00;padding:12px 18px;border-radius:50px;font-weight:bold;font-size:13px;cursor:pointer;z-index:99998;box-shadow:0 6px 20px rgba(0,0,0,0.35);font-family:sans-serif;";
   document.body.appendChild(bulkBtn);
 
-  // 2. Create Bulk Upload Modal Popup
+  // 4. Create Bulk Upload Modal Popup (Full English UI)
   const modal = document.createElement("div");
   modal.style.cssText = "display:none;position:fixed;inset:0;background:rgba(0,0,0,0.65);z-index:99999;align-items:center;justify-content:center;padding:16px;font-family:sans-serif;";
   modal.innerHTML = `
@@ -1121,9 +1200,9 @@
       </div>
 
       <div style="margin-bottom:12px;background:#fdf3f3;padding:10px 12px;border-radius:8px;border:1px solid #f3d0d0;font-size:12px;color:#444;">
-        <b>💡 Kaise Use Karein:</b><br>
-        1. Piche screen par pehle apni <b>Category</b> select kar lein (jaise Category 1 - Ernakulam).<br>
-        2. Niche <b>CSV/Excel file</b> select karein YA seedha Excel/Notepad se numbers copy karke box mein paste kar dein.
+        <b>💡 How to Use:</b><br>
+        1. First select your <b>Category</b> on the main screen (e.g., Category 1 - Ernakulam).<br>
+        2. Upload a <b>CSV/Text file</b> below OR directly copy-paste numbers from Excel/Notepad.
       </div>
 
       <div style="margin-bottom:12px;">
@@ -1133,10 +1212,10 @@
 
       <div style="margin-bottom:14px;">
         <label style="font-size:12px;font-weight:bold;color:#333;display:block;margin-bottom:5px;">
-          Option B: Paste Contact List (Har line mein 1 contact)
+          Option B: Paste Contact List (One contact per line)
         </label>
         <div style="font-size:11px;color:#666;margin-bottom:5px;">
-          Format: <b>Dukan ka Naam, 10-Digit Mobile, City</b> (Ya sirf 10-digit mobile numbers bhi paste kar sakte hain)
+          Format: <b>Shop Name, 10-Digit Mobile, City</b> (Or simply paste 10-digit mobile numbers)
         </div>
         <textarea id="mpBulkTextarea" rows="6" placeholder="Raju Textiles, 9876543210, Ernakulam&#10;Kochi Silks, 9123456789, Kochi&#10;8891173438" style="width:100%;padding:10px;border:1px solid #ccc;border-radius:8px;font-family:monospace;font-size:12px;box-sizing:border-box;"></textarea>
       </div>
@@ -1159,7 +1238,7 @@
   bulkBtn.onclick = () => { modal.style.display = "flex"; };
   document.getElementById("mpBulkClose").onclick = () => { modal.style.display = "none"; };
 
-  // 3. When CSV file is selected, load its text into the box
+  // Load CSV file into textarea
   document.getElementById("mpCsvInput").addEventListener("change", function(e) {
     const file = e.target.files[0];
     if (!file) return;
@@ -1170,11 +1249,11 @@
     reader.readAsText(file);
   });
 
-  // 4. Parse contacts, save to App + Generate 1-Click WhatsApp Invite Queue
+  // Parse contacts, add to app, and generate English WhatsApp links
   document.getElementById("mpProcessBulkBtn").addEventListener("click", async function() {
     const raw = document.getElementById("mpBulkTextarea").value.trim();
     if (!raw) {
-      alert("Kripya pehle numbers paste karein ya CSV file upload karein!");
+      alert("Please paste contact numbers or upload a CSV file first!");
       return;
     }
 
@@ -1182,14 +1261,13 @@
     const parsedContacts = [];
 
     lines.forEach((line, idx) => {
-      // Split by comma, tab (Excel copy-paste), or semicolon
       const parts = line.split(/[,\t;]+/).map(s => s.trim()).filter(Boolean);
       let name = "", phone = "", place = "Ernakulam";
 
       parts.forEach(p => {
         const digits = p.replace(/\D/g, "");
         if (digits.length >= 10 && !phone) {
-          phone = digits.slice(-10); // Take last 10 digits
+          phone = digits.slice(-10);
         } else if (!name) {
           name = p;
         } else {
@@ -1204,7 +1282,7 @@
     });
 
     if (parsedContacts.length === 0) {
-      alert("Koi valid 10-digit mobile number nahi mila! Check karein.");
+      alert("No valid 10-digit mobile numbers found! Please check your list.");
       return;
     }
 
@@ -1217,13 +1295,9 @@
     document.getElementById("mpBulkQueueArea").style.display = "block";
     document.getElementById("mpBulkCountBadge").innerText = parsedContacts.length + " Contacts";
 
-    const customerAppUrl = window.location.origin + window.location.pathname.replace(/shop\.html|admin\.html/i, "customer.html");
-
-    // Try to also add into existing Add Buyer modal if present so it saves in current category
     for (let i = 0; i < parsedContacts.length; i++) {
       const c = parsedContacts[i];
 
-      // Auto-fill and trigger existing Add Buyer form if available
       try {
         const inputs = Array.from(document.querySelectorAll("input"));
         const nameInp = inputs.find(el => el.placeholder && (el.placeholder.toLowerCase().includes("xyz") || el.placeholder.toLowerCase().includes("shop") || el.placeholder.toLowerCase().includes("name")));
@@ -1234,7 +1308,7 @@
         if (nameInp && phoneInp && addBtn) {
           const origOpen = window.open;
           const origAlert = window.alert;
-          window.open = function() {}; // Prevent 100 popups at once
+          window.open = function() {};
           window.alert = function() {};
 
           nameInp.value = c.name;
@@ -1252,9 +1326,8 @@
         }
       } catch (e) {}
 
-      // Create WhatsApp click-to-chat row
-      const msg = `Namaste *${c.name}* ji! 🙏\n\n*Mumbai Prints* ke exclusive digital catalog mein aapka swagat hai.\n\nNaye designs dekhne aur order karne ke liye is link par click karein:\n👉 ${customerAppUrl}?phone=${c.phone}&name=${encodeURIComponent(c.name)}\n\nLogin Mobile Number: *${c.phone}*`;
-      const waLink = `https://wa.me/91${c.phone}?text=${encodeURIComponent(msg)}`;
+      const engMsg = buildEnglishInviteMessage(c.name, c.phone);
+      const waLink = `https://wa.me/91${c.phone}?text=${encodeURIComponent(engMsg)}`;
 
       const row = document.createElement("div");
       row.style.cssText = "display:flex;justify-content:space-between;align-items:center;padding:8px 10px;border-bottom:1px solid #eee;background:#fff;border-radius:6px;margin-bottom:6px;";
@@ -1279,6 +1352,7 @@
     btn.disabled = false;
   });
 })();
+</script>
 </script>
 </body>
 </html>
