@@ -8,9 +8,6 @@
   <meta name="theme-color" content="#68150f">
   <title>Mumbai Prints - Super Admin</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <!-- Official Firebase Realtime WebSocket SDK for 0ms Instant Sync -->
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
   <style>
     :root { --mp-maroon: #68150f; --mp-maroon-dark: #4e0e09; --mp-orange: #eb4d26; --mp-bg: #fdf8f6; }
     body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: var(--mp-bg); }
@@ -28,12 +25,6 @@
   </style>
 </head>
 <body class="min-h-screen pb-16 text-slate-800">
-
-  <!-- FULLSCREEN IMAGE ZOOM LIGHTBOX -->
-  <div id="imageLightbox" onclick="this.classList.add('hidden')" class="hidden fixed inset-0 bg-black/90 z-[999999] flex flex-col items-center justify-center p-4 cursor-zoom-out">
-    <img id="lightboxImg" src="" class="max-w-full max-h-[85vh] object-contain rounded-lg shadow-2xl border border-white/20">
-    <p class="text-white text-xs mt-3 bg-black/60 px-4 py-1.5 rounded-full">Tap anywhere to close</p>
-  </div>
 
   <!-- ADMIN LOGIN SCREEN -->
   <section id="adminLoginSection" class="max-w-md mx-auto mt-16 p-4">
@@ -69,12 +60,13 @@
             <div class="flex items-center gap-2">
               <h1 class="text-xl font-black tracking-wide uppercase">Mumbai Prints</h1>
               <span class="text-[10px] bg-amber-400 text-slate-950 font-extrabold px-2 py-0.5 rounded-full uppercase">👑 Super Admin</span>
-              <span id="cloudStatusBadge" class="text-[10px] bg-emerald-600 text-white font-bold px-2 py-0.5 rounded-full">⚡ Live Instant</span>
+              <span id="cloudStatusBadge" class="text-[10px] bg-emerald-700 text-white font-bold px-2 py-0.5 rounded-full">⚡ Live Sync</span>
             </div>
             <p class="text-[11px] text-orange-200 font-medium tracking-widest uppercase">QSP is our USP</p>
           </div>
         </div>
         <div class="flex items-center gap-2">
+          <button onclick="forceCloudPull(true)" class="bg-emerald-700 hover:bg-emerald-600 text-white text-xs font-bold px-2.5 py-1.5 rounded-lg">🔄 Refresh Now</button>
           <button onclick="openEditAboutModal()" class="bg-orange-900/80 hover:bg-orange-800 border border-orange-400 text-white text-xs font-bold px-3 py-1.5 rounded-lg">⚙️ Edit About Us</button>
           <button onclick="adminLogout()" class="bg-red-700 hover:bg-red-800 text-white text-xs font-bold px-3 py-1.5 rounded-lg">Logout</button>
         </div>
@@ -113,7 +105,7 @@
       <div class="lg:col-span-5 space-y-5">
         <div class="bg-white rounded-xl shadow-sm border-2 border-orange-300 p-4">
           <div class="flex flex-wrap justify-between items-center gap-2 mb-3 border-b border-orange-100 pb-2">
-            <h3 class="font-bold text-mp-maroon text-sm">📤 Bulk Photo Upload</h3>
+            <h3 class="font-bold text-mp-maroon text-sm">📤 Bulk Photo Upload (100–150+)</h3>
             <button onclick="simulateBulk100Photos()" class="bg-amber-100 hover:bg-amber-200 text-amber-900 border border-amber-300 text-xs font-bold px-2.5 py-1 rounded">⚡ Demo Photos</button>
           </div>
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
@@ -142,7 +134,7 @@
             </div>
           </div>
           <button onclick="handleBulkUploadSubmit()" class="mt-3.5 w-full bg-mp-maroon hover:bg-mp-maroon-dark text-white font-bold py-2.5 rounded-lg shadow text-xs uppercase tracking-wider">
-            🚀 Upload & Broadcast Instantly
+            🚀 Upload & Broadcast to Category
           </button>
         </div>
 
@@ -163,31 +155,27 @@
         <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden sticky top-24 flex flex-col h-[640px]">
           <div class="grid grid-cols-2 bg-mp-maroon-dark text-white text-xs font-bold border-b border-orange-900">
             <button id="rightTabChatBtn" onclick="switchRightPanel('chat')" class="py-2.5 bg-mp-orange text-white">💬 1-on-1 Buyer Chat</button>
-            <button id="rightTabOrdersBtn" onclick="switchRightPanel('orders')" class="py-2.5 text-orange-200 hover:text-white">📦 Orders (<span id="orderCountBadge">0</span>)</button>
+            <button id="rightTabOrdersBtn" onclick="switchRightPanel('orders')" class="py-2.5 text-orange-200 hover:text-white">📦 All Orders (<span id="orderCountBadge">0</span>)</button>
           </div>
 
           <div id="rightChatContainer" class="flex-1 flex flex-col overflow-hidden">
-            <div class="bg-mp-maroon text-white p-3 border-b-2 border-mp-orange flex justify-between items-center">
-              <div class="min-w-0">
-                <div class="flex items-center gap-1.5 text-[10px] uppercase font-bold text-orange-200">
-                  <span id="chatHeaderCategoryBadge">Category 1</span>
-                  <span class="bg-emerald-600 px-1.5 py-0.5 rounded text-white">⚡ Instant Chat</span>
-                </div>
-                <h3 class="font-bold text-sm mt-0.5 truncate" id="activeChatTargetTitle">💬 Select Buyer</h3>
-                <p class="text-[11px] text-orange-200 truncate" id="chatSubInfo"></p>
+            <div class="bg-mp-maroon text-white p-3 border-b-2 border-mp-orange">
+              <div class="flex justify-between items-center text-[10px] uppercase font-bold text-orange-200">
+                <span id="chatHeaderCategoryBadge">Category 1</span>
+                <button onclick="editActiveBuyerDetails()" class="bg-white/20 hover:bg-white/30 px-2 py-0.5 rounded text-white">✏️ Edit Buyer</button>
               </div>
-              <button onclick="editActiveBuyerDetails()" class="bg-white/20 hover:bg-white/30 text-white text-[10px] font-bold px-2.5 py-1.5 rounded-lg shrink-0">✏️ Edit Buyer</button>
+              <h3 class="font-bold text-sm mt-1 truncate" id="activeChatTargetTitle">💬 Select Buyer</h3>
+              <p class="text-[11px] text-orange-200" id="chatSubInfo"></p>
             </div>
-
             <div id="chatMessagesArea" class="flex-1 p-3 overflow-y-auto space-y-3 bg-[#f7f1ee] text-xs"></div>
-
-            <!-- CHAT INPUT WITH PHOTO UPLOAD OPTION -->
+            
+            <!-- CHAT INPUT WITH PHOTO UPLOAD -->
             <div class="p-2.5 bg-slate-50 border-t border-slate-200 flex items-center gap-1.5">
-              <input type="file" id="adminChatPhotoInput" accept="image/*" multiple class="hidden" onchange="sendAdminChatPhotos(this)">
+              <input type="file" id="adminChatPhotoInput" accept="image/*" class="hidden" onchange="sendAdminChatPhoto(this)">
               <button onclick="document.getElementById('adminChatPhotoInput').click()" title="Send Photo in Chat" class="bg-orange-100 hover:bg-orange-200 text-mp-maroon border border-orange-300 font-bold px-2.5 py-2 rounded-lg text-sm shrink-0">
                 📷
               </button>
-              <input type="text" id="chatMessageInput" onkeydown="if(event.key==='Enter') sendChatMessage()" placeholder="Type message or tap 📷 for photo..." class="flex-1 border border-slate-300 rounded-lg px-2.5 py-2 text-xs focus:outline-none focus:border-mp-orange">
+              <input type="text" id="chatMessageInput" onkeydown="if(event.key==='Enter') sendChatMessage()" placeholder="Type message or tap 📷..." class="flex-1 border border-slate-300 rounded-lg px-2.5 py-2 text-xs focus:outline-none focus:border-mp-orange">
               <button onclick="sendChatMessage()" class="bg-mp-maroon hover:bg-mp-maroon-dark text-white font-bold px-3.5 py-2 rounded-lg text-xs shrink-0">Send</button>
             </div>
           </div>
@@ -199,7 +187,7 @@
     </main>
   </div>
 
-  <!-- MODAL: ADD BUYER -->
+  <!-- MODAL: ADD BUYER WITH FREE SMS & WHATSAPP 1-CLICK INVITE -->
   <div id="addBuyerModal" class="hidden fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
     <div class="bg-white rounded-2xl max-w-md w-full p-5 shadow-2xl border-2 border-mp-orange space-y-4 text-xs">
       <div class="flex justify-between items-center border-b pb-2">
@@ -225,35 +213,37 @@
     </div>
   </div>
 
-  <!-- MODAL: EDIT BUYER FULL DETAILS (ADMIN ACCESS) -->
+  <!-- MODAL: SUPER ADMIN EDIT BUYER FULL DETAILS -->
   <div id="editBuyerModal" class="hidden fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
     <div class="bg-white rounded-2xl max-w-md w-full p-5 shadow-2xl border-2 border-mp-orange space-y-3.5 text-xs">
       <div class="flex justify-between items-center border-b pb-2">
-        <h3 class="text-base font-black text-mp-maroon uppercase">✏️ Edit Customer Account (Admin)</h3>
+        <h3 class="text-base font-black text-mp-maroon uppercase">✏️ Edit Buyer Full Profile</h3>
         <button onclick="document.getElementById('editBuyerModal').classList.add('hidden')" class="text-slate-400 font-bold text-lg">✕</button>
       </div>
       <input type="hidden" id="editBuyerOrigId">
       <div>
-        <label class="font-bold block mb-1">Shop / Customer Name</label>
+        <label class="block font-bold text-slate-700 mb-1">Shop / Customer Name</label>
         <input type="text" id="editBuyerNameInp" class="w-full border-2 rounded-lg p-2 text-sm">
       </div>
       <div>
-        <label class="font-bold block mb-1">Admin Nickname (Optional)</label>
-        <input type="text" id="editBuyerNickInp" placeholder="e.g. Salim Bhai VIP" class="w-full border-2 rounded-lg p-2 text-sm">
+        <label class="block font-bold text-slate-700 mb-1">Nickname (For Admin/Shop View)</label>
+        <input type="text" id="editBuyerNickInp" placeholder="e.g. Salim Bhai" class="w-full border-2 rounded-lg p-2 text-sm">
       </div>
       <div>
-        <label class="font-bold block mb-1">10-Digit Mobile Number</label>
+        <label class="block font-bold text-slate-700 mb-1">10-Digit Mobile Number</label>
         <input type="tel" id="editBuyerPhoneInp" class="w-full border-2 rounded-lg p-2 text-sm">
       </div>
       <div>
-        <label class="font-bold block mb-1">Place / City</label>
+        <label class="block font-bold text-slate-700 mb-1">Place / City</label>
         <input type="text" id="editBuyerPlaceInp" class="w-full border-2 rounded-lg p-2 text-sm">
       </div>
       <div>
-        <label class="font-bold block mb-1">Assigned Category</label>
-        <select id="editBuyerCatInp" class="w-full border-2 rounded-lg p-2 text-sm font-bold text-mp-maroon"></select>
+        <label class="block font-bold text-slate-700 mb-1">Assigned Category</label>
+        <select id="editBuyerCatInp" class="w-full border-2 rounded-lg p-2 text-sm font-bold text-mp-maroon bg-orange-50"></select>
       </div>
-      <button onclick="saveEditedBuyerDetails()" class="w-full bg-mp-maroon text-white font-black py-3 rounded-xl uppercase shadow">Save Customer Changes</button>
+      <button onclick="saveEditedBuyerProfile()" class="w-full bg-mp-maroon text-white font-black py-3 rounded-xl uppercase shadow">
+        💾 Save Buyer Changes
+      </button>
     </div>
   </div>
 
@@ -288,16 +278,16 @@
     </div>
   </div>
 
-  <script>
-    const FB_DB_URL = "https://mumbai-prints-default-rtdb.firebaseio.com";
-    const FB_REST_URL = "https://mumbai-prints-default-rtdb.firebaseio.com/mp_cloud_db_2026.json";
-    const STORAGE_KEY = 'mumbai_prints_master_db_v1';
+  <!-- FULLSCREEN IMAGE VIEWER MODAL -->
+  <div id="fullImgModal" onclick="this.classList.add('hidden')" class="hidden fixed inset-0 bg-black/85 z-[99999] flex flex-col items-center justify-center p-4 cursor-zoom-out">
+    <img id="fullImgTarget" src="" class="max-w-full max-h-[85vh] rounded-xl shadow-2xl border-2 border-white object-contain">
+    <span class="mt-3 text-white text-xs bg-black/60 px-4 py-1.5 rounded-full">Tap anywhere to close</span>
+  </div>
 
-    function openImageLightbox(src) {
-      if (!src) return;
-      document.getElementById('lightboxImg').src = src;
-      document.getElementById('imageLightbox').classList.remove('hidden');
-    }
+  <script>
+    const FB_BASE = "https://mumbai-prints-default-rtdb.firebaseio.com/mp_cloud_db_2026";
+    const FB_URL = FB_BASE + ".json";
+    const STORAGE_KEY = 'mumbai_prints_master_db_v1';
 
     const defaultDB = {
       folders: ['Ajrakh Print', 'DJ Material', '3D Print', 'DCM', '320 Cut', '3 Meter Cut'],
@@ -340,17 +330,21 @@
     let rightPanelMode = 'chat';
 
     let cloudReady = false;
+    let isSyncing = false;
     let lastCloudString = "";
-    let fbRef = null;
+    let lastRenderedChatSignature = "";
+    let lastRenderedOrdersSignature = "";
+    let lastRenderedBuyersSignature = "";
+
+    function openFullImage(src) {
+      if (!src) return;
+      document.getElementById('fullImgTarget').src = src;
+      document.getElementById('fullImgModal').classList.remove('hidden');
+    }
 
     function getCanonicalBuyerId(phone) {
       const clean = String(phone || '').replace(/\D/g, '').slice(-10);
       return clean.length === 10 ? ('b_' + clean) : ('b_' + Date.now());
-    }
-
-    function formatOrderTimestamp(ts) {
-      const d = ts ? new Date(ts) : new Date();
-      return d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short' }) + ', ' + d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     }
 
     function matchPlaceToCategoryInDB(placeStr, refDB) {
@@ -362,6 +356,10 @@
         }
       }
       return target.categories['catX'] ? 'catX' : Object.keys(target.categories)[0];
+    }
+
+    function matchPlaceToCategory(placeStr) {
+      return matchPlaceToCategoryInDB(placeStr, db);
     }
 
     function normalizeAndMigrateDB(targetDB) {
@@ -393,7 +391,8 @@
         if (!newChats[canonId]) newChats[canonId] = [];
         const seen = new Set(newChats[canonId].map(m => m.msgId || (m.sender + '|' + m.text + '|' + m.time)));
         list.forEach((m, idx) => {
-          if (!m.msgId) m.msgId = 'm_' + (m.ts || idx) + '_' + String(m.text || 'img').slice(0, 10);
+          if (!m || m.deleted) return;
+          if (!m.msgId) m.msgId = 'm_' + (m.ts || idx) + '_' + String(m.text).slice(0, 10);
           const key = m.msgId;
           if (!seen.has(key)) {
             seen.add(key);
@@ -404,15 +403,15 @@
       });
       targetDB.chats = newChats;
 
-      // Sort orders strictly newest first (chronological latest on top)
-      targetDB.orders.forEach((o, i) => {
+      // Filter out deleted orders & sort newest first (chronological descending)
+      targetDB.orders = (targetDB.orders || []).filter(o => o && !o.deleted);
+      targetDB.orders.forEach((o, idx) => {
         if (o.buyerId && idMap[o.buyerId]) o.buyerId = idMap[o.buyerId];
         else if (o.buyerPhone) o.buyerId = getCanonicalBuyerId(o.buyerPhone);
         if (!o.ts) {
-          const matchNum = String(o.id || '').match(/\d{13}/);
-          o.ts = matchNum ? Number(matchNum[0]) : (1700000000000 - i);
+          const parsedNum = Number(String(o.id).replace(/\D/g, '').slice(0, 13));
+          o.ts = parsedNum > 1600000000000 ? parsedNum : (1700000000000 + idx);
         }
-        if (!o.status) o.status = 'Pending';
       });
       targetDB.orders.sort((a, b) => (b.ts || 0) - (a.ts || 0));
 
@@ -420,6 +419,7 @@
         targetDB.categories[k].buyerIds = [];
       });
       Object.values(targetDB.buyers).forEach(b => {
+        if (b.deleted) return;
         const catK = (b.catKey && targetDB.categories[b.catKey]) ? b.catKey : matchPlaceToCategoryInDB(b.place, targetDB);
         b.catKey = catK;
         if (!targetDB.categories[catK].buyerIds.includes(b.id)) {
@@ -438,11 +438,14 @@
       merged.folders = Array.from(new Set([...(c.folders || []), ...(l.folders || [])]));
       merged.categories = Object.assign({}, l.categories, c.categories);
 
-      merged.buyers = Object.assign({}, l.buyers, c.buyers);
-      Object.keys(l.buyers || {}).forEach(id => {
-        if (c.buyers && c.buyers[id]) {
-          merged.buyers[id] = Object.assign({}, c.buyers[id], l.buyers[id]);
-          if (c.buyers[id].nickname && !l.buyers[id].nickname) merged.buyers[id].nickname = c.buyers[id].nickname;
+      merged.buyers = Object.assign({}, c.buyers, l.buyers);
+      Object.keys(c.buyers || {}).forEach(id => {
+        if (l.buyers && l.buyers[id]) {
+          const lTime = l.buyers[id].updatedAt || 0;
+          const cTime = c.buyers[id].updatedAt || 0;
+          merged.buyers[id] = cTime > lTime
+            ? Object.assign({}, l.buyers[id], c.buyers[id])
+            : Object.assign({}, c.buyers[id], l.buyers[id]);
         }
       });
 
@@ -452,6 +455,7 @@
         const combined = [...(c.chats?.[bId] || []), ...(l.chats?.[bId] || [])];
         const uniqueMap = new Map();
         combined.forEach(m => {
+          if (!m || m.deleted) return;
           const key = m.msgId || `${m.from}_${m.sender}_${m.text}_${m.time}`;
           if (!uniqueMap.has(key)) uniqueMap.set(key, m);
         });
@@ -462,9 +466,11 @@
 
       const orderMap = new Map();
       [...(c.orders || []), ...(l.orders || [])].forEach(o => {
-        if (o && o.id) {
-          const existing = orderMap.get(String(o.id));
-          orderMap.set(String(o.id), Object.assign({}, existing || {}, o));
+        if (o && o.id && !o.deleted) {
+          const ex = orderMap.get(String(o.id));
+          if (!ex || (o.updatedAt || 0) >= (ex.updatedAt || 0)) {
+            orderMap.set(String(o.id), o);
+          }
         }
       });
       merged.orders = Array.from(orderMap.values()).sort((a, b) => (b.ts || 0) - (a.ts || 0));
@@ -482,93 +488,105 @@
       return normalizeAndMigrateDB(merged);
     }
 
-    // =====================================================================
-    // ZERO-DELAY WEBSOCKET REAL-TIME ENGINE
-    // =====================================================================
-    function initRealtimeWebSocket() {
-      try {
-        if (!firebase.apps.length) {
-          firebase.initializeApp({ databaseURL: FB_DB_URL });
-        }
-        fbRef = firebase.database().ref("mp_cloud_db_2026");
+    function setSyncStatus(text, bgClass) {
+      const badge = document.getElementById('cloudStatusBadge');
+      if (badge) {
+        badge.innerText = text;
+        badge.className = `text-[10px] ${bgClass} text-white font-bold px-2 py-0.5 rounded-full`;
+      }
+    }
 
-        fbRef.on("value", (snapshot) => {
-          const val = snapshot.val();
-          if (val && val[STORAGE_KEY]) {
-            const incomingStr = val[STORAGE_KEY];
-            if (incomingStr !== lastCloudString) {
+    async function saveDB() {
+      db = normalizeAndMigrateDB(db);
+      try { localStorage.setItem(STORAGE_KEY, JSON.stringify(db)); } catch (e) {}
+      if (!cloudReady) return;
+      await pushToCloudSafe();
+    }
+
+    async function pushToCloudSafe() {
+      if (isSyncing) return;
+      isSyncing = true;
+      setSyncStatus('⚡ Sending...', 'bg-amber-600');
+      try {
+        const res = await fetch(FB_URL + "?t=" + Date.now(), { cache: "no-store" });
+        if (res.ok) {
+          const cloudWrapper = await res.json();
+          if (cloudWrapper && cloudWrapper[STORAGE_KEY]) {
+            const cloudDB = JSON.parse(cloudWrapper[STORAGE_KEY]);
+            db = mergeDatabases(db, cloudDB);
+          }
+        }
+        const finalStr = JSON.stringify(db);
+        try { localStorage.setItem(STORAGE_KEY, finalStr); } catch (e) {}
+        lastCloudString = finalStr;
+
+        await fetch(FB_URL, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ [STORAGE_KEY]: finalStr, updatedAt: Date.now() })
+        });
+        setSyncStatus('⚡ Live Sync', 'bg-emerald-700');
+      } catch (e) {
+        setSyncStatus('⚠️ Offline', 'bg-red-700');
+      }
+      isSyncing = false;
+    }
+
+    async function forceCloudPull(forceRender) {
+      if (isSyncing) return;
+      isSyncing = true;
+      try {
+        const res = await fetch(FB_URL + "?t=" + Date.now(), { cache: "no-store" });
+        if (res.ok) {
+          const cloudWrapper = await res.json();
+          if (cloudWrapper && cloudWrapper[STORAGE_KEY]) {
+            const cloudStr = cloudWrapper[STORAGE_KEY];
+            if (cloudStr !== lastCloudString || !cloudReady || forceRender) {
               const oldDB = JSON.parse(JSON.stringify(db));
-              const cloudDB = JSON.parse(incomingStr);
+              const cloudDB = JSON.parse(cloudStr);
               db = mergeDatabases(db, cloudDB);
               const mergedStr = JSON.stringify(db);
-              lastCloudString = mergedStr;
               try { localStorage.setItem(STORAGE_KEY, mergedStr); } catch (e) {}
 
               if (cloudReady) {
                 detectChangesAndNotify(oldDB, db);
               }
-              cloudReady = true;
-              // Surgical UI Update so even if Admin is typing, chat messages & orders update INSTANTLY!
-              surgicalUIUpdate();
+              lastCloudString = mergedStr;
+              smartRefreshAdminUI(forceRender);
             }
           } else {
             cloudReady = true;
-            pushInstantToCloud();
+            isSyncing = false;
+            await pushToCloudSafe();
+            return;
           }
-        });
-      } catch (e) {
-        // Fallback fast polling if WebSocket is blocked
-        setInterval(fallbackRestPull, 1000);
-      }
-    }
-
-    function pushInstantToCloud() {
-      db = normalizeAndMigrateDB(db);
-      const str = JSON.stringify(db);
-      lastCloudString = str;
-      try { localStorage.setItem(STORAGE_KEY, str); } catch (e) {}
-
-      if (fbRef) {
-        fbRef.set({ [STORAGE_KEY]: str, updatedAt: Date.now() }).catch(() => {});
-      } else {
-        fetch(FB_REST_URL, {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ [STORAGE_KEY]: str, updatedAt: Date.now() })
-        }).catch(() => {});
-      }
-    }
-
-    async function fallbackRestPull() {
-      try {
-        const res = await fetch(FB_REST_URL + "?t=" + Date.now(), { cache: "no-store" });
-        if (!res.ok) return;
-        const data = await res.json();
-        if (data && data[STORAGE_KEY] && data[STORAGE_KEY] !== lastCloudString) {
-          const oldDB = JSON.parse(JSON.stringify(db));
-          db = mergeDatabases(db, JSON.parse(data[STORAGE_KEY]));
-          lastCloudString = JSON.stringify(db);
-          try { localStorage.setItem(STORAGE_KEY, lastCloudString); } catch (e) {}
-          if (cloudReady) detectChangesAndNotify(oldDB, db);
-          cloudReady = true;
-          surgicalUIUpdate();
         }
-      } catch (e) {}
+        cloudReady = true;
+        setSyncStatus('⚡ Live Sync', 'bg-emerald-700');
+      } catch (e) {
+        cloudReady = true;
+        setSyncStatus('⚠️ Retry', 'bg-red-700');
+      }
+      isSyncing = false;
     }
 
-    function saveDB() {
-      pushInstantToCloud();
-    }
+    // Smart UI Refresh so Chat & Orders update even while typing without losing focus
+    function smartRefreshAdminUI(forceAll) {
+      const chatSig = JSON.stringify(db.chats[activeChatBuyerId] || []);
+      const ordersSig = JSON.stringify(db.orders || []);
+      const buyersSig = JSON.stringify({ b: db.buyers, c: db.categories, a: activeCategoryKey, sel: activeChatBuyerId });
 
-    // Surgical Update: Never destroys the chat input box while typing!
-    function surgicalUIUpdate() {
-      renderCategoryBar();
-      renderBuyersList();
-      renderChatMessagesOnly();
-      renderOrdersOnly();
-      const activeEl = document.activeElement;
-      const isTyping = activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA' || activeEl.tagName === 'SELECT');
-      if (!isTyping) {
+      if (forceAll || buyersSig !== lastRenderedBuyersSignature) {
+        lastRenderedBuyersSignature = buyersSig;
+        renderCategoryBar();
+        renderBuyersList();
+      }
+      if (forceAll || chatSig !== lastRenderedChatSignature || ordersSig !== lastRenderedOrdersSignature) {
+        lastRenderedChatSignature = chatSig;
+        lastRenderedOrdersSignature = ordersSig;
+        renderRightPanel();
+      }
+      if (forceAll) {
         renderFolders();
         renderUploadDropdowns();
         renderDesignsFeed();
@@ -605,12 +623,13 @@
       location.reload();
     }
 
-    function initAdminApp() {
+    async function initAdminApp() {
       if (sessionStorage.getItem('mp_admin_auth') === '1') {
         document.getElementById('adminLoginSection').classList.add('hidden');
         document.getElementById('adminMainApp').classList.remove('hidden');
         db = normalizeAndMigrateDB(db);
         renderEverything(true);
+        await forceCloudPull(true);
       }
     }
 
@@ -662,7 +681,7 @@
         const newKey = 'cat_' + Date.now();
         db.categories[newKey] = { id: newKey, name: name.trim(), place: place.trim(), buyerIds: [] };
         activeCategoryKey = newKey;
-        renderEverything(false);
+        renderEverything();
       };
       bar.appendChild(addBtn);
     }
@@ -675,7 +694,7 @@
       if (!newPlace) return;
       cat.name = newName.trim();
       cat.place = newPlace.trim();
-      renderEverything(false);
+      renderEverything();
     }
 
     // 2. FABRIC FOLDERS
@@ -706,7 +725,7 @@
       if (name && name.trim()) {
         db.folders.push(name.trim());
         activeFolder = name.trim();
-        renderEverything(false);
+        renderEverything();
       }
     }
 
@@ -716,7 +735,7 @@
         db.folders = db.folders.map(f => f === oldName ? newName.trim() : f);
         db.designs.forEach(d => { if (d.folder === oldName) d.folder = newName.trim(); });
         activeFolder = newName.trim();
-        renderEverything(false);
+        renderEverything();
       }
     }
 
@@ -725,11 +744,11 @@
         db.folders = db.folders.filter(f => f !== fName);
         db.designs = db.designs.filter(d => d.folder !== fName);
         activeFolder = db.folders[0] || '';
-        renderEverything(false);
+        renderEverything();
       }
     }
 
-    // 3. BUYERS LIST (WITH SUPER ADMIN FULL EDIT ACCESS)
+    // 3. BUYERS LIST (WITH SUPER ADMIN FULL EDIT)
     function renderBuyersList() {
       const activeCat = db.categories[activeCategoryKey] || Object.values(db.categories)[0];
       if (!activeCat) return;
@@ -746,7 +765,7 @@
 
       activeCat.buyerIds.forEach(id => {
         const b = db.buyers[id];
-        if (!b) return;
+        if (!b || b.deleted) return;
         const isSelected = activeChatBuyerId === id;
         const inv = buildInviteLinks(b.name, b.phone, b.place);
         const msgCount = (db.chats[id] || []).length;
@@ -774,7 +793,7 @@
             <div class="mt-1.5 flex flex-wrap items-center gap-1" onclick="event.stopPropagation()">
               <a href="${inv.smsUrl}" class="text-[10px] bg-blue-600 text-white px-1.5 py-0.5 rounded font-bold">📲 SMS</a>
               <a href="${inv.waUrl}" target="_blank" class="text-[10px] bg-green-600 text-white px-1.5 py-0.5 rounded font-bold">🟢 WA</a>
-              <button onclick="openEditBuyerModal('${id}')" class="text-[10px] bg-amber-100 hover:bg-amber-200 text-amber-900 border border-amber-300 px-1.5 py-0.5 rounded font-bold">✏️ Edit</button>
+              <button onclick="openEditBuyerModal('${id}')" class="text-[10px] bg-amber-100 hover:bg-amber-200 border border-amber-300 px-1.5 py-0.5 rounded text-amber-950 font-bold">✏️ Edit</button>
               <select onchange="shiftBuyerCategory('${id}', this.value)" class="text-[10px] border border-orange-300 bg-white rounded px-1 py-0.5 font-semibold text-mp-maroon">
                 ${shiftOptions}
               </select>
@@ -794,7 +813,8 @@
       document.getElementById('editBuyerNickInp').value = b.nickname || '';
       document.getElementById('editBuyerPhoneInp').value = b.phone || '';
       document.getElementById('editBuyerPlaceInp').value = b.place || '';
-      document.getElementById('editBuyerCatInp').innerHTML = Object.values(db.categories).map(c =>
+      const catSel = document.getElementById('editBuyerCatInp');
+      catSel.innerHTML = Object.values(db.categories).map(c =>
         `<option value="${c.id}" ${c.id === b.catKey ? 'selected' : ''}>${c.name} (${c.place})</option>`
       ).join('');
       document.getElementById('editBuyerModal').classList.remove('hidden');
@@ -806,42 +826,50 @@
       }
     }
 
-    function saveEditedBuyerDetails() {
+    function saveEditedBuyerProfile() {
       const origId = document.getElementById('editBuyerOrigId').value;
-      const name = document.getElementById('editBuyerNameInp').value.trim();
-      const nickname = document.getElementById('editBuyerNickInp').value.trim();
-      const phone = document.getElementById('editBuyerPhoneInp').value.replace(/\D/g, '').slice(-10);
-      const place = document.getElementById('editBuyerPlaceInp').value.trim();
-      const catKey = document.getElementById('editBuyerCatInp').value;
+      const newName = document.getElementById('editBuyerNameInp').value.trim();
+      const newNick = document.getElementById('editBuyerNickInp').value.trim();
+      const newPhone = document.getElementById('editBuyerPhoneInp').value.replace(/\D/g, '').slice(-10);
+      const newPlace = document.getElementById('editBuyerPlaceInp').value.trim();
+      const newCatKey = document.getElementById('editBuyerCatInp').value;
 
-      if (!name || phone.length !== 10 || !place) {
-        alert('Please enter valid Name, 10-Digit Phone, and Place.');
+      if (!newName || newPhone.length !== 10 || !newPlace) {
+        alert('Please enter valid Name, 10-Digit Mobile Number, and Place!');
         return;
       }
 
-      const newId = getCanonicalBuyerId(phone);
+      const newCanonId = getCanonicalBuyerId(newPhone);
       const oldBuyer = db.buyers[origId] || {};
 
-      db.buyers[newId] = {
-        id: newId,
-        name,
-        nickname,
-        phone,
-        place,
-        catKey,
-        isFav: oldBuyer.isFav || false
+      db.buyers[newCanonId] = {
+        id: newCanonId,
+        name: newName,
+        nickname: newNick,
+        phone: newPhone,
+        place: newPlace,
+        catKey: newCatKey,
+        isFav: oldBuyer.isFav || false,
+        updatedAt: Date.now()
       };
 
-      if (origId !== newId) {
+      if (newCanonId !== origId) {
         if (db.chats[origId]) {
-          db.chats[newId] = [...(db.chats[newId] || []), ...db.chats[origId]];
+          db.chats[newCanonId] = [...(db.chats[newCanonId] || []), ...db.chats[origId]];
           delete db.chats[origId];
         }
+        (db.orders || []).forEach(o => {
+          if (o.buyerId === origId) {
+            o.buyerId = newCanonId;
+            o.buyerPhone = newPhone;
+            o.buyerName = newName;
+          }
+        });
         delete db.buyers[origId];
       }
 
-      activeCategoryKey = catKey;
-      activeChatBuyerId = newId;
+      activeCategoryKey = newCatKey;
+      activeChatBuyerId = newCanonId;
       document.getElementById('editBuyerModal').classList.add('hidden');
       renderEverything(false);
     }
@@ -849,7 +877,8 @@
     function toggleBuyerFav(id) {
       if (db.buyers[id]) {
         db.buyers[id].isFav = !db.buyers[id].isFav;
-        renderEverything(false);
+        db.buyers[id].updatedAt = Date.now();
+        renderEverything();
       }
     }
 
@@ -857,8 +886,9 @@
       const b = db.buyers[buyerId];
       if (!b || b.catKey === targetCatKey) return;
       b.catKey = targetCatKey;
+      b.updatedAt = Date.now();
       activeCategoryKey = targetCatKey;
-      renderEverything(false);
+      renderEverything();
     }
 
     function removeBuyer(id) {
@@ -866,7 +896,7 @@
       if (!b) return;
       if (confirm(`Remove buyer "${b.name}"?`)) {
         delete db.buyers[id];
-        renderEverything(false);
+        renderEverything();
       }
     }
 
@@ -889,7 +919,7 @@
       const cleanPlace = (place || 'Ernakulam').trim();
       const buyerId = getCanonicalBuyerId(cleanPhone);
 
-      const targetCatKey = preferredCatKey || matchPlaceToCategoryInDB(cleanPlace, db);
+      const targetCatKey = preferredCatKey || matchPlaceToCategory(cleanPlace);
       const existing = db.buyers[buyerId] || {};
 
       db.buyers[buyerId] = {
@@ -899,7 +929,8 @@
         place: cleanPlace,
         nickname: existing.nickname || '',
         catKey: targetCatKey,
-        isFav: existing.isFav || false
+        isFav: existing.isFav || false,
+        updatedAt: Date.now()
       };
 
       if (!db.chats[buyerId] || db.chats[buyerId].length === 0) {
@@ -918,7 +949,7 @@
       return { buyerId, targetCatKey };
     }
 
-    function confirmAddBuyerWithSMS() {
+    async function confirmAddBuyerWithSMS() {
       const name = document.getElementById('newBuyerName').value.trim();
       const phone = document.getElementById('newBuyerPhone').value.trim();
       const place = document.getElementById('newBuyerPlace').value.trim();
@@ -942,7 +973,7 @@
       const box = document.getElementById('smsPreviewBox');
       box.classList.remove('hidden');
       box.innerHTML = `
-        <div class="font-bold text-green-900">✅ Added Instantly to ${db.categories[res.targetCatKey].name} (${db.categories[res.targetCatKey].place})!</div>
+        <div class="font-bold text-green-900">✅ Added & Synced to ${db.categories[res.targetCatKey].name} (${db.categories[res.targetCatKey].place})!</div>
         <div class="text-[11px] bg-white p-2.5 rounded border border-green-200 whitespace-pre-line">${inv.smsText}</div>
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
           <a href="${inv.smsUrl}" class="bg-blue-600 hover:bg-blue-700 text-white text-center font-bold py-2.5 rounded-xl shadow">📲 1. Send Free SIM SMS</a>
@@ -952,8 +983,8 @@
       `;
     }
 
-    // 4. IMAGE COMPRESSION & BULK UPLOAD
-    function compressImageFile(file, maxW, quality, callback) {
+    // 4. IMAGE COMPRESSION & BULK DESIGN UPLOAD
+    function compressImageFile(file, maxW, callback) {
       const reader = new FileReader();
       reader.onload = function(e) {
         const img = new Image();
@@ -964,7 +995,7 @@
           canvas.height = img.height * scale;
           const ctx = canvas.getContext('2d');
           ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-          callback(canvas.toDataURL('image/jpeg', quality));
+          callback(canvas.toDataURL('image/jpeg', 0.72));
         };
         img.onerror = function() { callback(e.target.result); };
         img.src = e.target.result;
@@ -1003,7 +1034,7 @@
 
       let done = 0;
       Array.from(files).forEach((file, idx) => {
-        compressImageFile(file, 750, 0.7, (compressedDataUrl) => {
+        compressImageFile(file, 800, (compressedDataUrl) => {
           db.designs.unshift({
             id: Date.now() + idx,
             folder,
@@ -1017,8 +1048,8 @@
           done++;
           if (done === files.length) {
             activeFolder = folder;
-            renderEverything(false);
-            alert(`${files.length} photos uploaded & broadcast instantly!`);
+            renderEverything();
+            alert(`${files.length} photos uploaded & synced to ${targetLabel}!`);
           }
         });
       });
@@ -1028,7 +1059,7 @@
       const folder = activeFolder;
       const targetCat = activeCategoryKey;
       const catObj = db.categories[targetCat];
-      for (let i = 15; i >= 1; i--) {
+      for (let i = 20; i >= 1; i--) {
         db.designs.unshift({
           id: Date.now() + i,
           folder,
@@ -1040,7 +1071,7 @@
           favBy: {}
         });
       }
-      renderEverything(false);
+      renderEverything();
       alert('Demo Photos uploaded to ' + folder + '!');
     }
 
@@ -1080,10 +1111,10 @@
               <button onclick="deleteDesignPhoto(${item.id})" class="font-bold text-red-600 hover:underline">🗑️ Delete</button>
             </div>
           </div>
-          <img src="${item.img}" onclick="openImageLightbox(this.src)" class="w-full h-44 object-cover bg-slate-100 cursor-zoom-in">
+          <img src="${item.img}" onclick="openFullImage('${item.img}')" class="w-full h-44 object-cover bg-slate-100 cursor-zoom-in">
           <div class="p-3 flex justify-between items-center gap-2">
             <h4 class="font-bold text-slate-800 text-xs">${item.title}</h4>
-            <span class="text-[10px] text-slate-400">Tap photo to zoom</span>
+            <span class="text-[10px] text-slate-400">ID: #${String(item.id).slice(-4)}</span>
           </div>
         `;
         container.appendChild(card);
@@ -1096,137 +1127,120 @@
       const newTitle = prompt('Edit Design Title:', d.title);
       if (newTitle && newTitle.trim()) {
         d.title = newTitle.trim();
-        renderEverything(false);
+        renderEverything();
       }
     }
 
     function deleteDesignPhoto(id) {
       if (confirm('Delete this sent photo for everyone?')) {
         db.designs = db.designs.filter(x => x.id !== id);
-        renderEverything(false);
+        renderEverything();
       }
     }
 
-    // 5. RIGHT PANEL: INSTANT CHAT (WITH PHOTOS) & CHRONOLOGICAL ORDERS
+    // 5. RIGHT PANEL: CHAT (WITH PHOTO SUPPORT) & CHRONOLOGICAL ORDERS
     function switchRightPanel(mode) {
       rightPanelMode = mode;
       renderRightPanel();
     }
 
-    function renderChatMessagesOnly() {
-      const box = document.getElementById('chatMessagesArea');
-      if (!box) return;
-      const b = db.buyers[activeChatBuyerId];
-      const cat = b ? db.categories[b.catKey] : null;
-      const catBadge = document.getElementById('chatHeaderCategoryBadge');
-      const titleEl = document.getElementById('activeChatTargetTitle');
-      const subEl = document.getElementById('chatSubInfo');
-
-      if (catBadge) catBadge.innerText = cat ? `${cat.name} (${cat.place})` : 'No Buyer Selected';
-      if (titleEl) titleEl.innerText = b ? `💬 ${b.nickname || b.name}` : 'Select a buyer';
-      if (subEl) subEl.innerText = b ? `📞 ${b.phone} • 📍 ${b.place}` : '';
-
-      const msgs = db.chats[activeChatBuyerId] || [];
-      box.innerHTML = msgs.map(m => {
-        const isShop = m.from === 'shop';
-        const imgContent = m.chatImg || m.productImg;
-        return `
-          <div class="flex flex-col ${isShop ? 'items-end' : 'items-start'}">
-            <div class="max-w-[85%] rounded-xl p-2.5 shadow-sm border ${isShop ? 'bg-[#ffeedd] border-orange-200 text-mp-maroon' : 'bg-white border-slate-200 text-slate-900'}">
-              <div class="text-[10px] font-bold opacity-75 flex justify-between gap-3">
-                <span>${m.sender}</span>
-                <span>${m.time || ''}</span>
-              </div>
-              ${imgContent ? `<img src="${imgContent}" onclick="openImageLightbox(this.src)" class="w-full max-h-48 object-cover rounded-lg mt-1.5 border cursor-zoom-in">` : ''}
-              ${m.productTitle ? `<div class="text-[10px] font-bold mt-1 text-mp-orange">${m.productTitle}</div>` : ''}
-              ${m.text ? `<div class="text-xs mt-1 font-medium break-words">${m.text}</div>` : ''}
-            </div>
-          </div>
-        `;
-      }).join('');
-      box.scrollTop = box.scrollHeight;
-    }
-
-    function renderOrdersOnly() {
-      const badge = document.getElementById('orderCountBadge');
-      if (badge) badge.innerText = (db.orders || []).length;
-      const ordBox = document.getElementById('rightOrdersContainer');
-      if (!ordBox) return;
-
-      // Sort strictly chronological (newest timestamp first)
-      const sortedOrders = [...(db.orders || [])].sort((a, b) => (b.ts || 0) - (a.ts || 0));
-
-      if (sortedOrders.length === 0) {
-        ordBox.innerHTML = `<div class="text-center py-10 text-slate-400">No orders received yet.</div>`;
-        return;
-      }
-
-      ordBox.innerHTML = sortedOrders.map((o, idx) => {
-        const canonId = o.buyerId || getCanonicalBuyerId(o.buyerPhone);
-        const b = db.buyers[canonId] || { name: o.buyerName || 'Customer', phone: o.buyerPhone || '', place: o.buyerPlace || 'Unknown', catKey: 'catX' };
-        const cat = db.categories[b.catKey] || { name: 'Category X', place: b.place };
-        const statusColor = o.status === 'Dispatched' ? 'bg-emerald-100 text-emerald-800' : (o.status === 'Confirmed' ? 'bg-blue-100 text-blue-800' : 'bg-amber-100 text-amber-800');
-        return `
-          <div class="bg-white p-3 rounded-xl shadow-sm border-2 ${idx === 0 ? 'border-mp-orange' : 'border-orange-200'} space-y-2">
-            <div class="flex justify-between items-center">
-              <div class="flex items-center gap-1.5">
-                ${idx === 0 ? `<span class="bg-mp-orange text-white text-[9px] font-black px-1.5 py-0.5 rounded uppercase">NEWEST</span>` : `<span class="text-[10px] font-bold text-slate-400">#${idx + 1}</span>`}
-                <span class="bg-mp-maroon text-white text-[10px] font-bold px-2 py-0.5 rounded">${cat.name}</span>
-              </div>
-              <span class="text-[10px] text-slate-500 font-bold">🕒 ${o.time || formatOrderTimestamp(o.ts)}</span>
-            </div>
-            <div class="flex gap-2.5 items-center">
-              <img src="${o.img}" onclick="openImageLightbox(this.src)" class="w-14 h-14 object-cover rounded border shrink-0 cursor-zoom-in">
-              <div class="flex-1 min-w-0">
-                <div class="font-bold text-slate-900 truncate">👤 ${b.nickname || b.name} (${b.phone || ''})</div>
-                <div class="text-[11px] text-slate-600 truncate">👕 ${o.designTitle}</div>
-                <div class="text-xs font-black text-mp-orange mt-0.5">📦 Qty: ${o.qty}</div>
-              </div>
-            </div>
-            <div class="flex items-center justify-between gap-2 pt-1 border-t border-slate-100">
-              <select onchange="updateOrderStatus('${o.id}', this.value)" class="text-[10px] font-bold px-2 py-1 rounded border ${statusColor}">
-                <option value="Pending" ${o.status === 'Pending' ? 'selected' : ''}>⏳ Pending</option>
-                <option value="Confirmed" ${o.status === 'Confirmed' ? 'selected' : ''}>✅ Confirmed</option>
-                <option value="Dispatched" ${o.status === 'Dispatched' ? 'selected' : ''}>🚚 Dispatched</option>
-              </select>
-              <div class="flex gap-1.5">
-                <button onclick="activeChatBuyerId='${canonId}'; switchRightPanel('chat');" class="bg-orange-50 hover:bg-orange-100 text-mp-maroon font-bold px-2.5 py-1 rounded border border-orange-200 text-[10px]">
-                  💬 Chat
-                </button>
-                <button onclick="deleteOrderById('${o.id}')" class="bg-red-50 hover:bg-red-100 text-red-700 font-bold px-2 py-1 rounded border border-red-200 text-[10px]">
-                  🗑️
-                </button>
-              </div>
-            </div>
-          </div>
-        `;
-      }).join('');
-    }
-
-    function updateOrderStatus(ordId, newStatus) {
-      const ord = (db.orders || []).find(o => String(o.id) === String(ordId));
-      if (!ord) return;
-      ord.status = newStatus;
-      saveDB();
-      renderOrdersOnly();
-    }
-
-    function deleteOrderById(ordId) {
-      if (confirm('Delete this order from the list?')) {
-        db.orders = (db.orders || []).filter(o => String(o.id) !== String(ordId));
-        saveDB();
-        renderOrdersOnly();
-      }
-    }
-
     function renderRightPanel() {
+      const badge = document.getElementById('orderCountBadge');
+      if (!badge) return;
+      badge.innerText = (db.orders || []).length;
       const isChat = rightPanelMode === 'chat';
       document.getElementById('rightChatContainer').classList.toggle('hidden', !isChat);
       document.getElementById('rightOrdersContainer').classList.toggle('hidden', isChat);
       document.getElementById('rightTabChatBtn').className = isChat ? 'py-2.5 bg-mp-orange text-white font-bold' : 'py-2.5 text-orange-200';
       document.getElementById('rightTabOrdersBtn').className = !isChat ? 'py-2.5 bg-mp-orange text-white font-bold' : 'py-2.5 text-orange-200';
-      renderChatMessagesOnly();
-      renderOrdersOnly();
+
+      if (isChat) {
+        const b = db.buyers[activeChatBuyerId];
+        const cat = b ? db.categories[b.catKey] : null;
+        document.getElementById('chatHeaderCategoryBadge').innerText = cat ? `${cat.name} (${cat.place})` : 'No Buyer Selected';
+        document.getElementById('activeChatTargetTitle').innerText = b ? `💬 ${b.nickname || b.name}` : 'Select a buyer';
+        document.getElementById('chatSubInfo').innerText = b ? `📞 ${b.phone} • 📍 ${b.place}` : '';
+
+        const box = document.getElementById('chatMessagesArea');
+        box.innerHTML = '';
+        const msgs = db.chats[activeChatBuyerId] || [];
+        msgs.forEach(m => {
+          if (m.deleted) return;
+          const isShop = m.from === 'shop';
+          const imgSrc = m.chatImg || m.productImg || '';
+          const div = document.createElement('div');
+          div.className = `flex flex-col ${isShop ? 'items-end' : 'items-start'}`;
+          div.innerHTML = `
+            <div class="max-w-[85%] rounded-xl p-2.5 shadow-sm border ${isShop ? 'bg-[#ffeedd] border-orange-200 text-mp-maroon' : 'bg-white border-slate-200 text-slate-900'}">
+              <div class="flex justify-between items-center gap-3 text-[10px] font-bold opacity-75">
+                <span>${m.sender} • ${m.time || ''}</span>
+                <button onclick="deleteAdminChatMessage('${activeChatBuyerId}', '${m.msgId}')" title="Delete Message" class="text-red-500 hover:text-red-700">✕</button>
+              </div>
+              ${imgSrc ? `<img src="${imgSrc}" onclick="openFullImage('${imgSrc}')" class="w-full max-h-48 object-cover rounded-lg mt-1.5 border cursor-zoom-in">` : ''}
+              ${m.productTitle ? `<div class="text-[10px] font-bold mt-1 text-mp-orange">${m.productTitle}</div>` : ''}
+              ${m.text ? `<div class="text-xs mt-1 font-medium whitespace-pre-line">${m.text}</div>` : ''}
+            </div>
+          `;
+          box.appendChild(div);
+        });
+        box.scrollTop = box.scrollHeight;
+      } else {
+        const ordBox = document.getElementById('rightOrdersContainer');
+        ordBox.innerHTML = '';
+        const sortedOrders = [...(db.orders || [])].sort((a, b) => (b.ts || 0) - (a.ts || 0));
+        if (sortedOrders.length === 0) {
+          ordBox.innerHTML = `<div class="text-center py-10 text-slate-400">No orders received yet.</div>`;
+          return;
+        }
+        sortedOrders.forEach((o, index) => {
+          const canonId = o.buyerId || getCanonicalBuyerId(o.buyerPhone);
+          const b = db.buyers[canonId] || { name: o.buyerName || 'Customer', phone: o.buyerPhone || '', place: o.buyerPlace || 'Unknown', catKey: 'catX' };
+          const cat = db.categories[b.catKey] || { name: 'Category X', place: b.place };
+          const status = o.status || 'Pending';
+          const statusColors = status === 'Dispatched' ? 'bg-green-100 text-green-800 border-green-300'
+                             : status === 'Confirmed' ? 'bg-blue-100 text-blue-800 border-blue-300'
+                             : 'bg-amber-100 text-amber-900 border-amber-300';
+
+          const div = document.createElement('div');
+          div.className = 'bg-white p-3 rounded-xl shadow-sm border border-orange-200 space-y-2';
+          div.innerHTML = `
+            <div class="flex justify-between items-center">
+              <div class="flex items-center gap-1.5">
+                <span class="bg-mp-orange text-white text-[10px] font-black px-1.5 py-0.5 rounded">#${index + 1}</span>
+                <span class="bg-mp-maroon text-white text-[10px] font-bold px-2 py-0.5 rounded">${cat.name} (${cat.place})</span>
+              </div>
+              <span class="text-[10px] text-slate-500 font-semibold">${o.time || ''}</span>
+            </div>
+            <div class="flex gap-2.5 items-center">
+              <img src="${o.img}" onclick="openFullImage('${o.img}')" class="w-14 h-14 object-cover rounded border shrink-0 cursor-zoom-in">
+              <div class="flex-1 min-w-0">
+                <div class="font-bold text-slate-900 truncate">👤 ${b.nickname || b.name} (${b.phone || ''})</div>
+                <div class="text-[11px] text-slate-600 truncate">👕 ${o.designTitle}</div>
+                <div class="text-xs font-black text-mp-orange mt-0.5 flex items-center gap-2">
+                  <span>📦 Qty: ${o.qty}</span>
+                  <button onclick="editOrderQty('${o.id}')" class="text-[10px] bg-slate-100 hover:bg-slate-200 text-slate-700 px-1.5 py-0.5 rounded font-bold">✏️ Edit</button>
+                </div>
+              </div>
+            </div>
+            <div class="flex items-center justify-between gap-2 pt-1 border-t border-slate-100">
+              <select onchange="updateOrderStatus('${o.id}', this.value)" class="text-[10px] font-bold px-2 py-1 rounded border ${statusColors}">
+                <option value="Pending" ${status === 'Pending' ? 'selected' : ''}>⏳ Pending</option>
+                <option value="Confirmed" ${status === 'Confirmed' ? 'selected' : ''}>✅ Confirmed</option>
+                <option value="Dispatched" ${status === 'Dispatched' ? 'selected' : ''}>🚚 Dispatched</option>
+              </select>
+              <div class="flex gap-1.5">
+                <button onclick="activeChatBuyerId='${canonId}'; switchRightPanel('chat'); renderEverything(true);" class="bg-orange-50 hover:bg-orange-100 text-mp-maroon font-bold px-2.5 py-1 rounded border border-orange-200 text-[11px]">
+                  💬 Chat
+                </button>
+                <button onclick="deleteOrderItem('${o.id}')" class="bg-red-50 hover:bg-red-100 text-red-700 font-bold px-2 py-1 rounded border border-red-200 text-[11px]">
+                  🗑️
+                </button>
+              </div>
+            </div>
+          `;
+          ordBox.appendChild(div);
+        });
+      }
     }
 
     function sendChatMessage() {
@@ -1244,36 +1258,69 @@
         ts: now
       });
       input.value = '';
-      renderChatMessagesOnly();
+      renderRightPanel();
       renderBuyersList();
       saveDB();
     }
 
-    function sendAdminChatPhotos(fileInput) {
-      const files = fileInput.files;
-      if (!files || files.length === 0 || !activeChatBuyerId) return;
-      const caption = document.getElementById('chatMessageInput').value.trim();
-      document.getElementById('chatMessageInput').value = '';
-
-      Array.from(files).forEach((file, idx) => {
-        compressImageFile(file, 700, 0.72, (compressedUrl) => {
-          if (!db.chats[activeChatBuyerId]) db.chats[activeChatBuyerId] = [];
-          const now = Date.now() + idx;
-          db.chats[activeChatBuyerId].push({
-            msgId: 'm_img_' + now + '_' + Math.floor(Math.random() * 1000),
-            from: 'shop',
-            sender: 'Mumbai Prints (Admin)',
-            text: idx === 0 && caption ? caption : '📷 Sent a photo',
-            chatImg: compressedUrl,
-            time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-            ts: now
-          });
-          renderChatMessagesOnly();
-          renderBuyersList();
-          saveDB();
+    function sendAdminChatPhoto(fileInput) {
+      const file = fileInput.files && fileInput.files[0];
+      if (!file || !activeChatBuyerId) return;
+      const caption = prompt('Add a caption for this photo (optional):', '') || '';
+      compressImageFile(file, 650, (compressedUrl) => {
+        if (!db.chats[activeChatBuyerId]) db.chats[activeChatBuyerId] = [];
+        const now = Date.now();
+        db.chats[activeChatBuyerId].push({
+          msgId: 'm_img_' + now + '_' + Math.floor(Math.random() * 1000),
+          from: 'shop',
+          sender: 'Mumbai Prints (Admin)',
+          text: caption.trim() || '📷 Photo Attached',
+          chatImg: compressedUrl,
+          time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          ts: now
         });
+        fileInput.value = '';
+        renderRightPanel();
+        renderBuyersList();
+        saveDB();
       });
-      fileInput.value = '';
+    }
+
+    function deleteAdminChatMessage(buyerId, msgId) {
+      if (!confirm('Delete this message?')) return;
+      if (db.chats[buyerId]) {
+        db.chats[buyerId] = db.chats[buyerId].filter(m => m.msgId !== msgId);
+        renderRightPanel();
+        saveDB();
+      }
+    }
+
+    function updateOrderStatus(orderId, newStatus) {
+      const ord = (db.orders || []).find(o => String(o.id) === String(orderId));
+      if (!ord) return;
+      ord.status = newStatus;
+      ord.updatedAt = Date.now();
+      renderRightPanel();
+      saveDB();
+    }
+
+    function editOrderQty(orderId) {
+      const ord = (db.orders || []).find(o => String(o.id) === String(orderId));
+      if (!ord) return;
+      const newQ = prompt('Edit Order Quantity:', ord.qty);
+      if (newQ && newQ.trim()) {
+        ord.qty = newQ.trim();
+        ord.updatedAt = Date.now();
+        renderRightPanel();
+        saveDB();
+      }
+    }
+
+    function deleteOrderItem(orderId) {
+      if (!confirm('Delete this order permanently?')) return;
+      db.orders = (db.orders || []).filter(o => String(o.id) !== String(orderId));
+      renderRightPanel();
+      saveDB();
     }
 
     // 6. EDIT ABOUT US
@@ -1297,7 +1344,7 @@
       alert('About Us details updated for all customers!');
     }
 
-    // 7. SMART NOTIFICATIONS & BULK ADD
+    // 7. SMART NOTIFICATIONS & BULK ADD MODAL
     function playNotificationSound() {
       try {
         const AudioCtx = window.AudioContext || window.webkitAudioContext;
@@ -1345,7 +1392,7 @@
       `;
       toast.onclick = function() { navigateToTarget(action); toast.remove(); };
       document.body.appendChild(toast);
-      setTimeout(() => { if (toast.parentNode) toast.remove(); }, 6000);
+      setTimeout(() => { if (toast.parentNode) toast.remove(); }, 7000);
     }
 
     if ("Notification" in window && Notification.permission === "default") {
@@ -1370,6 +1417,17 @@
         return;
       }
 
+      const oldBuyerIds = new Set(Object.keys(oldDB.buyers || {}));
+      const newBuyerIds = Object.keys(newDB.buyers || {}).filter(id => !oldBuyerIds.has(id));
+      if (newBuyerIds.length === 1) {
+        const nb = newDB.buyers[newBuyerIds[0]];
+        showSmartNotification(
+          `New Buyer Joined: ${nb.name}`,
+          `📍 Place: ${nb.place} • 📞 ${nb.phone}`,
+          { type: "chat", buyerId: nb.id }
+        );
+      }
+
       const oldChats = oldDB.chats || {};
       const newChats = newDB.chats || {};
       for (const bId of Object.keys(newChats)) {
@@ -1390,7 +1448,7 @@
       }
     }
 
-    // Bulk Buyer Upload Modal
+    // Bulk Buyer Upload UI
     (function setupBulkModal() {
       const bulkBtn = document.createElement("button");
       bulkBtn.innerHTML = "📋 + Bulk Add Buyers";
@@ -1423,7 +1481,7 @@
           </button>
           <div id="mpBulkQueueArea" style="margin-top:16px;display:none;">
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
-              <h4 style="margin:0;color:#1b5e20;font-size:14px;">✅ Buyers Saved! Click 'Send' one-by-one:</h4>
+              <h4 style="margin:0;color:#1b5e20;font-size:14px;">✅ Buyers Saved to Cloud! Click 'Send' one-by-one:</h4>
               <span id="mpBulkCountBadge" style="background:#e8f5e9;color:#1b5e20;padding:3px 8px;border-radius:12px;font-size:11px;font-weight:bold;"></span>
             </div>
             <div id="mpBulkListContainer" style="max-height:240px;overflow-y:auto;border:1px solid #e0e0e0;border-radius:8px;padding:8px;background:#fafafa;"></div>
@@ -1449,7 +1507,7 @@
         reader.readAsText(file);
       });
 
-      document.getElementById("mpProcessBulkBtn").addEventListener("click", function() {
+      document.getElementById("mpProcessBulkBtn").addEventListener("click", async function() {
         const raw = document.getElementById("mpBulkTextarea").value.trim();
         if (!raw) { alert("Please paste contact numbers or upload a CSV file first!"); return; }
         const chosenCatKey = document.getElementById("mpBulkCatSelect").value;
@@ -1473,6 +1531,10 @@
         });
 
         if (parsedContacts.length === 0) { alert("No valid 10-digit mobile numbers found!"); return; }
+
+        const btn = document.getElementById("mpProcessBulkBtn");
+        btn.innerText = "⏳ Saving All Buyers to Cloud...";
+        btn.disabled = true;
 
         const listContainer = document.getElementById("mpBulkListContainer");
         listContainer.innerHTML = "";
@@ -1502,11 +1564,19 @@
 
         activeCategoryKey = chosenCatKey;
         renderEverything(false);
+
+        btn.innerText = "✅ ALL BUYERS SAVED TO CLOUD!";
+        setTimeout(() => {
+          btn.innerText = "⚡ ADD ALL BUYERS & GENERATE WHATSAPP LINKS";
+          btn.disabled = false;
+        }, 2500);
       });
     })();
 
+    // Fast 700ms Real-Time Sync Loop
     initAdminApp();
-    initRealtimeWebSocket();
+    forceCloudPull(true);
+    setInterval(() => forceCloudPull(false), 700);
   </script>
 </body>
 </html>
