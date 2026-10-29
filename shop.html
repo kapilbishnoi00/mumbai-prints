@@ -32,11 +32,11 @@
       <div class="p-6 space-y-4 text-xs">
         <div>
           <label class="block font-bold text-slate-700 uppercase mb-1">Staff Username</label>
-          <input type="text" id="shopUser" placeholder="shop" class="w-full border-2 border-slate-200 rounded-lg p-2.5 text-sm focus:outline-none focus:border-mp-orange">
+          <input type="text" id="shopUser" placeholder="Enter Username" class="w-full border-2 border-slate-200 rounded-lg p-2.5 text-sm focus:outline-none focus:border-mp-orange">
         </div>
         <div>
           <label class="block font-bold text-slate-700 uppercase mb-1">Staff Password</label>
-          <input type="password" id="shopPass" onkeydown="if(event.key==='Enter') handleShopLogin()" placeholder="MP2051" class="w-full border-2 border-slate-200 rounded-lg p-2.5 text-sm focus:outline-none focus:border-mp-orange">
+          <input type="password" id="shopPass" onkeydown="if(event.key==='Enter') handleShopLogin()" placeholder="Enter Password" class="w-full border-2 border-slate-200 rounded-lg p-2.5 text-sm focus:outline-none focus:border-mp-orange">
         </div>
         <button onclick="handleShopLogin()" class="w-full bg-mp-maroon hover:bg-mp-maroon-dark text-white font-black py-3 rounded-xl shadow-md text-sm uppercase tracking-wider">
           Login to Shop Feed →
@@ -157,6 +157,7 @@
     </div>
   </div>
 
+  <!-- CORE SHOP LOGIC -->
   <script>
     const STORAGE_KEY = 'mumbai_prints_master_db_v1';
     let db = JSON.parse(localStorage.getItem(STORAGE_KEY));
@@ -178,7 +179,7 @@
         },
         chats: { b1: [{ from: 'shop', sender: 'Mumbai Prints', text: 'Welcome to Mumbai Prints!', time: '10:00 AM' }] },
         orders: [{ id: 'ord1', buyerId: 'b1', designId: 1, designTitle: 'Ajrakh Pure Cotton #1', img: 'https://images.unsplash.com/photo-1620799140408-edc6dcb6d633?auto=format&fit=crop&w=500&q=80', qty: '25 Meters / 5 Sets', time: 'Today, 10:15 AM' }],
-        designs: [{ id: 1, folder: 'Ajrakh Print', title: 'Ajrakh Pure Cotton #1', dateGroup: 'Today — 28 Oct 2026', targetCat: 'all', targetLabel: 'All Categories', img: 'https://images.unsplash.com/photo-1620799140408-edc6dcb6d633?auto=format&fit=crop&w=500&q=80', favBy: {} }],
+        designs: [{ id: 1, folder: 'Ajrakh Print', title: 'Ajrakh Pure Cotton #1', dateGroup: 'Today — 29 Oct 2026', targetCat: 'all', targetLabel: 'All Categories', img: 'https://images.unsplash.com/photo-1620799140408-edc6dcb6d633?auto=format&fit=crop&w=500&q=80', favBy: {} }],
         aboutUs: { phone1: '8893173438', phone2: '', email: 'mumbaiprint18@gmail.com', instagram: '', message: 'Thank you so much for showing your trust in us. We will always stand by your side to support you. Thank you so much!' }
       };
       localStorage.setItem(STORAGE_KEY, JSON.stringify(db));
@@ -186,13 +187,16 @@
     function saveDB() { localStorage.setItem(STORAGE_KEY, JSON.stringify(db)); }
 
     function buildInviteLinks(name, phone, place) {
-      const baseUrl = window.location.href.split('?')[0].replace('shop.html', 'customer.html');
-      const inviteLink = `${baseUrl}?invite=1&name=${encodeURIComponent(name)}&phone=${encodeURIComponent(phone)}&place=${encodeURIComponent(place)}`;
-      const smsText = `Welcome ${name}! You have been added to the Mumbai Prints Gold Customer Family. Just click the below link and tap Join Now to access our app: ${inviteLink}`;
-      const digitsOnly = phone.replace(/\D/g, '');
+      const cleanName = name || 'Valued Partner';
+      const cleanPlace = place || 'Ernakulam';
+      const digitsOnly = (phone || '').replace(/\D/g, '').slice(-10);
       const waPhone = (digitsOnly.length === 10) ? '91' + digitsOnly : digitsOnly;
-      const waUrl = `https://wa.me/${waPhone}?text=${encodeURIComponent(smsText)}`;
-      const smsUrl = `sms:${phone}?body=${encodeURIComponent(smsText)}`;
+      const baseUrl = window.location.origin + window.location.pathname.replace(/admin\.html|shop\.html/i, 'customer.html');
+      const inviteLink = `${baseUrl}?invite=1&phone=${encodeURIComponent(digitsOnly)}&name=${encodeURIComponent(cleanName)}&place=${encodeURIComponent(cleanPlace)}`;
+      const waMsg = `Hello *${cleanName}*,\n\nWelcome to the *Mumbai Prints* Exclusive Digital Catalog! 🌟\n\nExplore our latest textile collections, view new designs, and place your orders directly using the link below:\n👉 ${inviteLink}\n\n🔑 *Your Login Mobile Number:* ${digitsOnly}\n\nThank you,\n*Team Mumbai Prints*`;
+      const smsText = waMsg.replace(/\*/g, '');
+      const waUrl = `https://wa.me/${waPhone}?text=${encodeURIComponent(waMsg)}`;
+      const smsUrl = `sms:+91${digitsOnly}?body=${encodeURIComponent(smsText)}`;
       return { inviteLink, smsText, waUrl, smsUrl };
     }
 
@@ -204,21 +208,24 @@
     function handleShopLogin() {
       const u = document.getElementById('shopUser').value.trim();
       const p = document.getElementById('shopPass').value.trim();
-     if((u === 'shop' && p === 'mp1234') || (u === 'Mumbai29' && p === 'MU2000')) {
+      if((u === 'Mumbai29' && p === 'MU2000') || (u === 'shop' && p === 'mp1234')) {
         sessionStorage.setItem('mp_shop_auth', '1');
+        localStorage.setItem('mp_shop_autologin_v1', 'true');
         initShopApp();
       } else {
-        alert('Invalid Staff Credentials! Use: shop / mp1234');
+        alert('Invalid Staff Credentials! Use: Mumbai29 / MU2000');
       }
     }
 
     function shopLogout() {
       sessionStorage.removeItem('mp_shop_auth');
+      localStorage.removeItem('mp_shop_autologin_v1');
       location.reload();
     }
 
     function initShopApp() {
-      if(sessionStorage.getItem('mp_shop_auth') === '1') {
+      if(sessionStorage.getItem('mp_shop_auth') === '1' || localStorage.getItem('mp_shop_autologin_v1') === 'true') {
+        sessionStorage.setItem('mp_shop_auth', '1');
         document.getElementById('shopLoginSection').classList.add('hidden');
         document.getElementById('shopMainApp').classList.remove('hidden');
         renderShopView();
@@ -230,6 +237,7 @@
       if(tab === 'categories') drillStep = 'cat_list';
       ['categories', 'orders', 'favorites'].forEach(t => {
         const btn = document.getElementById('shopNav_' + t);
+        if(!btn) return;
         btn.className = (t === tab)
           ? 'py-2 px-1 rounded-xl flex flex-col items-center justify-center bg-orange-100 text-mp-maroon font-black text-xs'
           : 'py-2 px-1 rounded-xl flex flex-col items-center justify-center text-slate-500 font-bold text-xs';
@@ -239,8 +247,10 @@
 
     function renderShopView() {
       db = JSON.parse(localStorage.getItem(STORAGE_KEY)) || db;
-      document.getElementById('shopOrdBadge').innerText = db.orders.length;
+      const ordBadge = document.getElementById('shopOrdBadge');
+      if(ordBadge) ordBadge.innerText = (db.orders || []).length;
       const box = document.getElementById('shopDynamicView');
+      if(!box) return;
       box.innerHTML = '';
 
       if(currentShopTab === 'categories') {
@@ -264,7 +274,7 @@
                   <div class="text-xs text-slate-600 font-semibold">📍 Place: ${cat.place}</div>
                 </div>
                 <div class="flex items-center gap-2">
-                  <span class="bg-orange-100 text-mp-maroon font-bold text-xs px-3 py-1 rounded-full">${cat.buyerIds.length} Buyers</span>
+                  <span class="bg-orange-100 text-mp-maroon font-bold text-xs px-3 py-1 rounded-full">${(cat.buyerIds || []).length} Buyers</span>
                   <span class="text-mp-orange font-black text-lg">→</span>
                 </div>
               </div>
@@ -274,7 +284,7 @@
           box.innerHTML = html;
         }
         else if(drillStep === 'cust_list') {
-          const cat = db.categories[selectedCatKey];
+          const cat = db.categories[selectedCatKey] || Object.values(db.categories)[0];
           let html = `
             <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
               <div class="bg-[#fcedea] p-3.5 border-b border-orange-200 flex justify-between items-center">
@@ -289,7 +299,7 @@
               </div>
               <div class="divide-y divide-slate-100">
           `;
-          if(cat.buyerIds.length === 0) {
+          if(!cat.buyerIds || cat.buyerIds.length === 0) {
             html += `<div class="p-8 text-center text-xs text-slate-400">No customers in ${cat.name} yet.</div>`;
           } else {
             cat.buyerIds.forEach(id => {
@@ -346,7 +356,7 @@
                   <button onclick="drillStep='cust_list'; renderShopView();" class="bg-white/20 hover:bg-white/30 text-white font-bold px-2.5 py-1 rounded text-xs">← Customers</button>
                   <div>
                     <div class="font-bold text-sm">💬 ${b ? (b.nickname || b.name) : 'Customer'}</div>
-                    <div class="text-[10px] text-orange-200">${cat.name} (${cat.place}) • 📞 ${b ? b.phone : ''}</div>
+                    <div class="text-[10px] text-orange-200">${cat ? cat.name : ''} • 📞 ${b ? b.phone : ''}</div>
                   </div>
                 </div>
                 <button onclick="shopToggleFav('${selectedBuyerId}')" class="text-lg">${b && b.isFav ? '⭐' : '☆'}</button>
@@ -370,14 +380,14 @@
                 <h2 class="font-black text-mp-maroon text-sm uppercase">📦 All Categories Order List</h2>
                 <p class="text-[11px] text-slate-500">Newest orders on top • Tap to open customer chat</p>
               </div>
-              <span class="bg-orange-100 text-mp-maroon font-bold text-xs px-2.5 py-1 rounded-full">${db.orders.length} Orders</span>
+              <span class="bg-orange-100 text-mp-maroon font-bold text-xs px-2.5 py-1 rounded-full">${(db.orders || []).length} Orders</span>
             </div>
         `;
-        if(db.orders.length === 0) {
+        if(!db.orders || db.orders.length === 0) {
           html += `<div class="text-center py-12 text-xs text-slate-400">No orders received yet.</div>`;
         } else {
           db.orders.forEach(o => {
-            const b = db.buyers[o.buyerId] || { name: 'Buyer', place: 'Unknown', catKey: 'catX' };
+            const b = db.buyers[o.buyerId] || { name: o.buyerName || 'Buyer', place: o.buyerPlace || 'Unknown', catKey: 'catX' };
             const cat = db.categories[b.catKey] || { name: 'Category X', place: b.place };
             html += `
               <div class="p-3 rounded-xl border-2 border-orange-100 bg-orange-50/40 flex flex-col sm:flex-row justify-between gap-3 items-start sm:items-center">
@@ -387,7 +397,7 @@
                     <div class="flex flex-wrap gap-1.5 items-center mb-1">
                       <span class="bg-mp-maroon text-white text-[10px] font-bold px-2 py-0.5 rounded">${cat.name} (${cat.place})</span>
                       <span class="bg-orange-200 text-mp-maroon text-[10px] font-bold px-2 py-0.5 rounded">👤 ${b.nickname || b.name}</span>
-                      <span class="text-[10px] text-slate-400">${o.time}</span>
+                      <span class="text-[10px] text-slate-400">${o.time || ''}</span>
                     </div>
                     <div class="text-xs font-bold text-slate-800">👕 Design: ${o.designTitle}</div>
                     <div class="text-xs font-black text-mp-orange">📦 Ordered Qty: ${o.qty}</div>
@@ -404,7 +414,7 @@
         box.innerHTML = html;
       }
       else if(currentShopTab === 'favorites') {
-        const favBuyers = Object.values(db.buyers).filter(b => b.isFav);
+        const favBuyers = Object.values(db.buyers || {}).filter(b => b.isFav);
         let html = `
           <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-4 space-y-3">
             <div class="border-b pb-2 flex justify-between items-center">
@@ -563,7 +573,7 @@
             id: Date.now() + i,
             folder,
             title: `${prefix} #${i + 1}`,
-            dateGroup: 'Today — 28 Oct 2026',
+            dateGroup: 'Today — 29 Oct 2026',
             targetCat,
             targetLabel,
             img: e.target.result,
@@ -588,7 +598,7 @@
           id: Date.now() + i,
           folder,
           title: `${folder} Lot #${i}`,
-          dateGroup: 'Today — 28 Oct 2026',
+          dateGroup: 'Today — 29 Oct 2026',
           targetCat,
           targetLabel,
           img: 'https://images.unsplash.com/photo-1620799140408-edc6dcb6d633?auto=format&fit=crop&w=400&q=60',
@@ -622,578 +632,454 @@
       document.getElementById('shopAddBuyerModal').classList.remove('hidden');
     }
 
-    function shopConfirmAddBuyer() {
-      const name = document.getElementById('sNewName').value.trim();
-      const phone = document.getElementById('sNewPhone').value.trim();
-      const place = document.getElementById('sNewPlace').value.trim();
-      if(!name || !phone || !place) { alert('Name, Mobile Number, and Place are required!'); return; }
+    initShopApp();
+  </script>
 
-      let targetKey = 'catX';
-      Object.keys(db.categories).forEach(k => {
-        if(k !== 'catX' && db.categories[k].place.toLowerCase() === place.toLowerCase()) targetKey = k;
+  <!-- ===== MUMBAI PRINTS MASTER ENGINE V2: CLOUD SYNC + SMART NOTIFICATIONS + BULK BUYER UPLOAD ===== -->
+  <script>
+  (function() {
+    const FB_URL = "https://mumbai-prints-default-rtdb.firebaseio.com/mp_cloud_db_2026.json";
+    const STORAGE_KEY = "mumbai_prints_master_db_v1";
+
+    // 1. Setup Custom MP App Icon
+    try {
+      const canvas = document.createElement("canvas");
+      canvas.width = 192; canvas.height = 192;
+      const ctx = canvas.getContext("2d");
+      ctx.fillStyle = "#68150f";
+      ctx.beginPath(); ctx.roundRect(0, 0, 192, 192, 36); ctx.fill();
+      ctx.fillStyle = "#ffffff";
+      ctx.font = "bold 88px Arial, sans-serif";
+      ctx.textAlign = "center"; ctx.textBaseline = "middle";
+      ctx.fillText("MP", 96, 100);
+      const iconUrl = canvas.toDataURL("image/png");
+      const link = document.createElement("link");
+      link.rel = "icon"; link.type = "image/png"; link.href = iconUrl;
+      document.head.appendChild(link);
+    } catch (e) {}
+
+    // 2. Direct DB Buyer Addition Function
+    function addBuyerDirectlyToDB(name, phone, place, preferredCatKey) {
+      let currentDB = JSON.parse(localStorage.getItem(STORAGE_KEY)) || db;
+      const cleanPhone = (phone || "").replace(/\D/g, "").slice(-10);
+      if (cleanPhone.length !== 10) return null;
+      const cleanName = (name || "Buyer").trim();
+      const cleanPlace = (place || "Ernakulam").trim();
+
+      let existingId = Object.keys(currentDB.buyers || {}).find(
+        id => (currentDB.buyers[id].phone || "").replace(/\D/g, "").slice(-10) === cleanPhone
+      );
+
+      let targetCatKey = preferredCatKey || "catX";
+      if (!preferredCatKey) {
+        Object.keys(currentDB.categories || {}).forEach(k => {
+          if (k !== "catX" && currentDB.categories[k].place.toLowerCase() === cleanPlace.toLowerCase()) {
+            targetCatKey = k;
+          }
+        });
+      }
+      if (!currentDB.categories[targetCatKey]) targetCatKey = Object.keys(currentDB.categories)[0] || "cat1";
+
+      const buyerId = existingId || ("b_" + Date.now() + "_" + Math.floor(Math.random() * 10000));
+
+      currentDB.buyers[buyerId] = {
+        id: buyerId,
+        name: cleanName,
+        phone: cleanPhone,
+        place: cleanPlace,
+        nickname: currentDB.buyers[buyerId]?.nickname || "",
+        catKey: targetCatKey,
+        isFav: currentDB.buyers[buyerId]?.isFav || false
+      };
+
+      Object.keys(currentDB.categories).forEach(k => {
+        currentDB.categories[k].buyerIds = (currentDB.categories[k].buyerIds || []).filter(id => id !== buyerId);
       });
+      currentDB.categories[targetCatKey].buyerIds.unshift(buyerId);
 
-      const id = 'b_' + Date.now();
-      db.buyers[id] = { id, name, phone, place, nickname: '', catKey: targetKey, isFav: false };
-      db.categories[targetKey].buyerIds.unshift(id);
-      db.chats[id] = [{ from: 'shop', sender: 'Mumbai Prints', text: `Welcome ${name}! You have been added to the Mumbai Prints Gold Customer Family.`, time: 'Just now' }];
-      saveDB();
+      if (!currentDB.chats) currentDB.chats = {};
+      if (!currentDB.chats[buyerId] || currentDB.chats[buyerId].length === 0) {
+        currentDB.chats[buyerId] = [{
+          from: "shop",
+          sender: "Mumbai Prints",
+          text: `Welcome ${cleanName}! You have been added to the Mumbai Prints Exclusive Digital Catalog.`,
+          time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+        }];
+      }
+
+      db = currentDB;
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(currentDB));
+      return { buyerId, targetCatKey, currentDB };
+    }
+
+    // Override Single Add Buyer in Shop
+    window.shopConfirmAddBuyer = function() {
+      const name = document.getElementById("sNewName")?.value.trim();
+      const phone = document.getElementById("sNewPhone")?.value.trim();
+      const place = document.getElementById("sNewPlace")?.value.trim();
+      if (!name || !phone || !place) {
+        alert("Please enter Name, 10-Digit Mobile Number, and Place!");
+        return;
+      }
+      const res = addBuyerDirectlyToDB(name, phone, place, null);
+      if (!res) {
+        alert("Please enter a valid 10-digit mobile number!");
+        return;
+      }
+      selectedCatKey = res.targetCatKey;
+      selectedBuyerId = res.buyerId;
       renderShopView();
+      pushToCloudNow();
 
       const inv = buildInviteLinks(name, phone, place);
-      const box = document.getElementById('sSmsBox');
-      box.classList.remove('hidden');
+      const box = document.getElementById("sSmsBox");
+      box.classList.remove("hidden");
       box.innerHTML = `
-        <div class="font-bold text-green-900">✅ Added to ${db.categories[targetKey].name} (${db.categories[targetKey].place})!</div>
-        <div class="text-[11px] bg-white p-2.5 rounded border border-green-200 break-all">${inv.smsText}</div>
+        <div class="font-bold text-green-900">✅ Added to ${res.currentDB.categories[res.targetCatKey].name} (${res.currentDB.categories[res.targetCatKey].place})!</div>
+        <div class="text-[11px] bg-white p-2.5 rounded border border-green-200 whitespace-pre-line">${inv.smsText}</div>
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
           <a href="${inv.smsUrl}" class="bg-blue-600 text-white text-center font-bold py-2.5 rounded-xl shadow">📲 1. Send Free SIM SMS</a>
           <a href="${inv.waUrl}" target="_blank" class="bg-green-600 text-white text-center font-bold py-2.5 rounded-xl shadow">🟢 2. WhatsApp 1-Click Invite</a>
         </div>
         <button onclick="navigator.clipboard.writeText('${inv.inviteLink}'); alert('Invite link copied!');" class="w-full bg-slate-800 text-white font-bold py-2 rounded-xl mt-1">📋 Copy Invite Link</button>
       `;
-    }
+    };
 
-    initShopApp();
-  </script>
-</body><!-- ===== MUMBAI PRINTS MASTER UPGRADE: CLOUD SYNC + NOTIFICATIONS + AUTO-LOGIN + LOGO ===== -->
-<script>
-(function() {
-  const FB_URL = "https://mumbai-prints-default-rtdb.firebaseio.com/mp_cloud_db_2026.json";
-  const path = window.location.pathname.toLowerCase();
-  const isShop = path.includes("shop");
-  const isAdmin = path.includes("admin");
-  const isCustomer = !isShop && !isAdmin;
-
-  // 1. GENERATE CUSTOM "MP" LOGO FOR HOME SCREEN SHORTCUT
-  function setupAppLogo() {
-    try {
-      const canvas = document.createElement("canvas");
-      canvas.width = 192;
-      canvas.height = 192;
-      const ctx = canvas.getContext("2d");
-      ctx.fillStyle = "#801b1b";
-      ctx.beginPath();
-      ctx.roundRect(0, 0, 192, 192, 36);
-      ctx.fill();
-      ctx.fillStyle = "#ffffff";
-      ctx.font = "bold 88px Arial, sans-serif";
-      ctx.textAlign = "center";
-      ctx.textBaseline = "middle";
-      ctx.fillText("MP", 96, 100);
-      const iconUrl = canvas.toDataURL("image/png");
-
-      document.querySelectorAll("link[rel*='icon'], link[rel='manifest']").forEach(el => el.remove());
-
-      const link1 = document.createElement("link");
-      link1.rel = "icon";
-      link1.type = "image/png";
-      link1.href = iconUrl;
-      document.head.appendChild(link1);
-
-      const link2 = document.createElement("link");
-      link2.rel = "apple-touch-icon";
-      link2.href = iconUrl;
-      document.head.appendChild(link2);
-
-      const manifest = {
-        name: "Mumbai Prints",
-        short_name: "Mumbai Prints",
-        start_url: window.location.href,
-        display: "standalone",
-        background_color: "#801b1b",
-        theme_color: "#801b1b",
-        icons: [{ src: iconUrl, sizes: "192x192", type: "image/png" }]
-      };
-      const mLink = document.createElement("link");
-      mLink.rel = "manifest";
-      mLink.href = "data:application/json;charset=utf-8," + encodeURIComponent(JSON.stringify(manifest));
-      document.head.appendChild(mLink);
-    } catch (e) {}
-  }
-  setupAppLogo();
-
-  // 2. NOTIFICATION SOUND & POP-UP ENGINE
-  function playNotificationSound() {
-    try {
-      const AudioCtx = window.AudioContext || window.webkitAudioContext;
-      const ctx = new AudioCtx();
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-      osc.type = "sine";
-      osc.frequency.setValueAtTime(880, ctx.currentTime);
-      osc.frequency.setValueAtTime(1174.66, ctx.currentTime + 0.12);
-      gain.gain.setValueAtTime(0.3, ctx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.45);
-      osc.connect(gain);
-      gain.connect(ctx.destination);
-      osc.start();
-      osc.stop(ctx.currentTime + 0.45);
-    } catch (e) {}
-  }
-
-  function showNotification(title, body) {
-    playNotificationSound();
-    if ("Notification" in window && Notification.permission === "granted") {
+    // 3. Smart Notifications (Shows Customer Name + Opens Chat/Order on Click)
+    function playNotificationSound() {
       try {
-        new Notification(title, { body: body });
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        const ctx = new AudioCtx();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = "sine";
+        osc.frequency.setValueAtTime(880, ctx.currentTime);
+        osc.frequency.setValueAtTime(1174.66, ctx.currentTime + 0.12);
+        gain.gain.setValueAtTime(0.35, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.45);
+        osc.connect(gain); gain.connect(ctx.destination);
+        osc.start(); osc.stop(ctx.currentTime + 0.45);
       } catch (e) {}
     }
-    // On-screen toast alert so it never misses
-    const toast = document.createElement("div");
-    toast.style.cssText = "position:fixed;top:16px;right:16px;background:#801b1b;color:#fff;padding:12px 18px;border-radius:10px;box-shadow:0 6px 20px rgba(0,0,0,0.3);z-index:999999;font-family:sans-serif;font-size:14px;max-width:300px;border:2px solid #ffcc00;";
-    toast.innerHTML = "🔔 <b>" + title + "</b><br><span style='font-size:12px;opacity:0.95;'>" + body + "</span>";
-    document.body.appendChild(toast);
-    setTimeout(() => toast.remove(), 4500);
-  }
 
-  if ("Notification" in window && Notification.permission === "default") {
-    document.addEventListener("click", function reqPerm() {
-      Notification.requestPermission();
-      document.removeEventListener("click", reqPerm);
-    }, { once: true });
-  }
-
-  // 3. PASSWORD OVERRIDE + CLEAR PRE-FILLED BOXES + SHOP AUTO-LOGIN
-  function setupAuthAndAutoLogin() {
-    if (!isShop && !isAdmin) return;
-    const expectedUser = "Mumbai29";
-    const expectedPass = isAdmin ? "MU2051" : "MU2000";
-
-    const inputs = Array.from(document.querySelectorAll("input"));
-    const passInput = inputs.find(i => i.type === "password" || (i.id && i.id.toLowerCase().includes("pass")) || (i.value && i.value.includes("123")));
-    const userInput = passInput ? inputs[inputs.indexOf(passInput) - 1] : null;
-
-    if (userInput && passInput) {
-      const oldUserVal = userInput.value || (isAdmin ? "admin" : "shop");
-      const oldPassVal = passInput.value || (isAdmin ? "admin123" : "mp1234");
-
-      // Clear pre-filled values so strangers see empty boxes
-      userInput.value = "";
-      passInput.value = "";
-      userInput.setAttribute("placeholder", "Enter Username");
-      passInput.setAttribute("placeholder", "Enter Password");
-
-      // Find login button
-      const buttons = Array.from(document.querySelectorAll("button"));
-      const loginBtn = buttons.find(b => b.innerText.toUpperCase().includes("LOGIN"));
-
-      if (loginBtn) {
-        const origOnClick = loginBtn.onclick;
-        loginBtn.onclick = null;
-        loginBtn.addEventListener("click", function(e) {
-          e.preventDefault();
-          e.stopImmediatePropagation();
-          const u = userInput.value.trim();
-          const p = passInput.value.trim();
-          if (u === expectedUser && p === expectedPass) {
-            if (isShop) {
-              localStorage.setItem("mp_shop_autologin_v1", "true");
-            }
-            // Temporarily set old credentials so internal function passes
-            userInput.value = oldUserVal;
-            passInput.value = oldPassVal;
-            if (origOnClick) origOnClick.call(loginBtn, e);
-          } else {
-            alert("Wrong Username or Password!");
-          }
-        }, true);
-
-        // Auto-login for Shop only (stays logged in on refresh)
-        if (isShop && localStorage.getItem("mp_shop_autologin_v1") === "true") {
-          setTimeout(() => {
-            userInput.value = oldUserVal;
-            passInput.value = oldPassVal;
-            if (origOnClick) origOnClick.call(loginBtn, new Event("click"));
-          }, 150);
+    function navigateToTarget(action) {
+      if (!action) return;
+      if (action.type === "order") {
+        switchShopBottomTab("orders");
+      } else if (action.type === "chat" && action.buyerId) {
+        if (db.buyers[action.buyerId]) {
+          selectedCatKey = db.buyers[action.buyerId].catKey || "cat1";
         }
+        selectedBuyerId = action.buyerId;
+        currentShopTab = "categories";
+        drillStep = "chat_view";
+        renderShopView();
       }
     }
 
-    // Hook Logout button to clear Shop Auto-Login
-    document.addEventListener("click", function(e) {
-      const btn = e.target.closest("button, a");
-      if (btn && btn.innerText.toLowerCase().includes("logout")) {
-        if (isShop) localStorage.removeItem("mp_shop_autologin_v1");
+    function showSmartNotification(title, body, action) {
+      playNotificationSound();
+      if ("Notification" in window && Notification.permission === "granted") {
+        try {
+          const sysNotif = new Notification(title, { body: body });
+          sysNotif.onclick = function() { window.focus(); navigateToTarget(action); this.close(); };
+        } catch (e) {}
       }
-    }, true);
-  }
-  setupAuthAndAutoLogin();
-
-  // 4. REAL-TIME FIREBASE CLOUD SYNC ENGINE
-  const PRIVATE_KEYS = ["mp_shop_autologin_v1", "mp_cloud_last_hash"];
-  function isPrivateKey(k) {
-    if (PRIVATE_KEYS.includes(k)) return true;
-    const kl = k.toLowerCase();
-    // Keep individual customer login session private per phone
-    if (kl.includes("current") || kl.includes("logged") || kl.includes("session") || kl.includes("active_user") || kl.includes("fav")) return true;
-    try {
-      const val = JSON.parse(localStorage.getItem(k));
-      if (val && !Array.isArray(val) && typeof val === "object" && val.name && val.phone && Object.keys(val).length <= 6) {
-        return true; // Single customer session object
-      }
-    } catch (e) {}
-    return false;
-  }
-
-  function getSharedLocalData() {
-    const data = {};
-    for (let i = 0; i < localStorage.length; i++) {
-      const k = localStorage.key(i);
-      if (k && !isPrivateKey(k)) {
-        data[k] = localStorage.getItem(k);
-      }
+      const toast = document.createElement("div");
+      toast.style.cssText = "position:fixed;top:16px;right:16px;background:#68150f;color:#fff;padding:14px 18px;border-radius:12px;box-shadow:0 8px 25px rgba(0,0,0,0.4);z-index:999999;font-family:sans-serif;font-size:13px;max-width:320px;border:2px solid #ffcc00;cursor:pointer;";
+      toast.innerHTML = `
+        <div style="font-weight:bold;font-size:14px;color:#ffcc00;margin-bottom:4px;">🔔 ${title}</div>
+        <div style="font-size:12px;line-height:1.4;">${body}</div>
+        <div style="font-size:10px;color:#ffd54f;margin-top:6px;font-weight:bold;text-transform:uppercase;">👉 Tap here to open directly</div>
+      `;
+      toast.onclick = function() { navigateToTarget(action); toast.remove(); };
+      document.body.appendChild(toast);
+      setTimeout(() => { if (toast.parentNode) toast.remove(); }, 7000);
     }
-    return data;
-  }
 
-  let isPulling = false;
-  let lastCloudString = "";
-  let prevMsgCount = -1;
+    if ("Notification" in window && Notification.permission === "default") {
+      document.addEventListener("click", function reqPerm() {
+        Notification.requestPermission();
+        document.removeEventListener("click", reqPerm);
+      }, { once: true });
+    }
 
-  function countTotalMessages(dataObj) {
-    let count = 0;
-    Object.values(dataObj).forEach(valStr => {
-      try {
-        const parsed = JSON.parse(valStr);
-        const str = JSON.stringify(parsed);
-        const matches = str.match(/"text"\s*:|"msg"\s*:|"message"\s*:/g);
-        if (matches) count += matches.length;
-      } catch (e) {}
-    });
-    return count;
-  }
-
-  async function pushToCloud() {
-    if (isPulling) return;
-    try {
-      const payload = getSharedLocalData();
-      if (Object.keys(payload).length === 0) return;
-      const str = JSON.stringify(payload);
-      if (str === lastCloudString) return;
-      lastCloudString = str;
-      prevMsgCount = countTotalMessages(payload);
-      await fetch(FB_URL, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: str
-      });
-    } catch (e) {}
-  }
-
-  function refreshAppUI() {
-    const fns = ["renderAll", "loadData", "render", "init", "renderBuyers", "renderCustomers", "renderCategories", "renderFolders", "renderChat", "loadChat", "updateUI"];
-    fns.forEach(fn => {
-      if (typeof window[fn] === "function") {
-        try { window[fn](); } catch (e) {}
-      }
-    });
-    try {
-      window.dispatchEvent(new Event("storage"));
-    } catch (e) {}
-  }
-
-  async function pullFromCloud() {
-    try {
-      const res = await fetch(FB_URL);
-      if (!res.ok) return;
-      const cloudData = await res.json();
-      if (!cloudData || typeof cloudData !== "object") {
-        // First time: push existing local data to cloud
-        await pushToCloud();
+    function detectChangesAndNotify(oldDB, newDB) {
+      if (!oldDB || !newDB) return;
+      const oldOrderIds = new Set((oldDB.orders || []).map(o => String(o.id)));
+      const newOrders = (newDB.orders || []).filter(o => !oldOrderIds.has(String(o.id)));
+      if (newOrders.length > 0) {
+        const latestOrder = newOrders[0];
+        const buyer = (newDB.buyers && newDB.buyers[latestOrder.buyerId]) || { name: latestOrder.buyerName || "Customer" };
+        showSmartNotification(
+          `New Order from ${buyer.nickname || buyer.name}!`,
+          `📦 ${latestOrder.designTitle} — Qty: ${latestOrder.qty}`,
+          { type: "order", buyerId: latestOrder.buyerId }
+        );
         return;
       }
-      const cloudStr = JSON.stringify(cloudData);
-      if (cloudStr === lastCloudString) return;
 
-      isPulling = true;
-      const newMsgCount = countTotalMessages(cloudData);
-      if (prevMsgCount !== -1 && newMsgCount > prevMsgCount) {
-        showNotification("Mumbai Prints", "Naya message ya update aaya hai!");
-      }
-      prevMsgCount = newMsgCount;
-      lastCloudString = cloudStr;
-
-      Object.keys(cloudData).forEach(k => {
-        if (!isPrivateKey(k) && localStorage.getItem(k) !== cloudData[k]) {
-          localStorage.setItem(k, cloudData[k]);
-        }
-      });
-
-      const activeTag = document.activeElement ? document.activeElement.tagName : "";
-      if (activeTag !== "INPUT" && activeTag !== "TEXTAREA" && activeTag !== "SELECT") {
-        refreshAppUI();
-      }
-      isPulling = false;
-    } catch (e) {
-      isPulling = false;
-    }
-  }
-
-  // Intercept localStorage.setItem so any change pushes immediately
-  const origSetItem = localStorage.setItem.bind(localStorage);
-  localStorage.setItem = function(k, v) {
-    origSetItem(k, v);
-    if (!isPulling && !isPrivateKey(k)) {
-      setTimeout(pushToCloud, 100);
-    }
-  };
-
-  // Start Sync Loop
-  pullFromCloud();
-  setInterval(pullFromCloud, 2500);
-})();
-</script>
-  <!-- ===== MUMBAI PRINTS: ENGLISH MESSAGES + BULK BUYER UPLOAD ===== -->
-<script>
-(function() {
-  const customerAppUrl = window.location.origin + window.location.pathname.replace(/shop\.html|admin\.html/i, "customer.html");
-
-  // 1. Standard Professional English Invite Message Generator
-  function buildEnglishInviteMessage(name, phone) {
-    const cleanName = name || "Valued Partner";
-    const link = `${customerAppUrl}?phone=${phone}&name=${encodeURIComponent(cleanName)}`;
-    return `Hello *${cleanName}*,\n\nWelcome to the *Mumbai Prints* Exclusive Digital Catalog! 🌟\n\nExplore our latest textile collections, view new designs, and place your orders directly using the link below:\n👉 ${link}\n\n🔑 *Your Login Mobile Number:* ${phone}\n\nThank you,\n*Team Mumbai Prints*`;
-  }
-
-  // 2. Auto-Convert Existing Single Buyer WhatsApp / SMS Invites to English
-  function convertUrlToEnglish(url) {
-    try {
-      if (!url) return url;
-      const isWa = url.includes("wa.me") || url.includes("whatsapp.com");
-      const isSms = url.startsWith("sms:");
-      if (!isWa && !isSms) return url;
-
-      // Extract 10-digit phone number
-      const phoneMatch = url.match(/(?:91)?(\d{10})/);
-      const phone = phoneMatch ? phoneMatch[1] : "";
-
-      // Try to get buyer name from input field or URL
-      let name = "Valued Partner";
-      const decoded = decodeURIComponent(url);
-      const nameParam = decoded.match(/[?&]name=([^&\s]+)/);
-      if (nameParam && nameParam[1]) {
-        name = decodeURIComponent(nameParam[1]);
-      } else {
-        const inputs = Array.from(document.querySelectorAll("input"));
-        const nameInp = inputs.find(el => el.placeholder && (el.placeholder.toLowerCase().includes("xyz") || el.placeholder.toLowerCase().includes("shop") || el.placeholder.toLowerCase().includes("name")));
-        if (nameInp && nameInp.value.trim()) name = nameInp.value.trim();
+      const oldBuyerIds = new Set(Object.keys(oldDB.buyers || {}));
+      const newBuyerIds = Object.keys(newDB.buyers || {}).filter(id => !oldBuyerIds.has(id));
+      if (newBuyerIds.length === 1) {
+        const nb = newDB.buyers[newBuyerIds[0]];
+        showSmartNotification(
+          `New Buyer Joined: ${nb.name}`,
+          `📍 Place: ${nb.place} • 📞 ${nb.phone}`,
+          { type: "chat", buyerId: nb.id }
+        );
       }
 
-      if (phone) {
-        const engMsg = buildEnglishInviteMessage(name, phone);
-        if (isWa) {
-          return `https://wa.me/91${phone}?text=${encodeURIComponent(engMsg)}`;
-        } else if (isSms) {
-          return `sms:+91${phone}?body=${encodeURIComponent(engMsg.replace(/\*/g, ""))}`;
-        }
-      }
-    } catch (e) {}
-    return url;
-  }
-
-  // Intercept window.open for WhatsApp/SMS links
-  const origWindowOpen = window.open;
-  window.open = function(url, target, features) {
-    const updatedUrl = convertUrlToEnglish(url);
-    return origWindowOpen.call(window, updatedUrl, target, features);
-  };
-
-  // Intercept clicks on any dynamically generated WhatsApp / SMS links or Copy buttons
-  document.addEventListener("click", function(e) {
-    const linkEl = e.target.closest("a");
-    if (linkEl && linkEl.href && !linkEl.classList.contains("mp-wa-send-btn")) {
-      if (linkEl.href.includes("wa.me") || linkEl.href.includes("whatsapp.com") || linkEl.href.startsWith("sms:")) {
-        linkEl.href = convertUrlToEnglish(linkEl.href);
-      }
-    }
-  }, true);
-
-  // Also replace any on-screen Hinglish invite preview text automatically
-  setInterval(() => {
-    document.querySelectorAll("div, p, textarea, span").forEach(el => {
-      if (el.children.length === 0 && el.innerText && (el.innerText.includes("swagat hai") || el.innerText.includes("Namaste"))) {
-        const phoneMatch = el.innerText.match(/\d{10}/);
-        const phone = phoneMatch ? phoneMatch[0] : "";
-        if (phone) {
-          el.innerText = buildEnglishInviteMessage("Customer", phone).replace(/\*/g, "");
-        }
-      }
-      // Convert any Hinglish Notification Toast to English
-      if (el.innerHTML && el.innerHTML.includes("Naya message ya update aaya hai!")) {
-        el.innerHTML = el.innerHTML.replace("Naya message ya update aaya hai!", "New message or order update received!");
-      }
-    });
-  }, 500);
-
-  // 3. Add Floating Button for Bulk Buyer Upload
-  const bulkBtn = document.createElement("button");
-  bulkBtn.innerHTML = "📋 + Bulk Add Buyers (Excel / List)";
-  bulkBtn.style.cssText = "position:fixed;bottom:75px;right:20px;background:#801b1b;color:#fff;border:2px solid #ffcc00;padding:12px 18px;border-radius:50px;font-weight:bold;font-size:13px;cursor:pointer;z-index:99998;box-shadow:0 6px 20px rgba(0,0,0,0.35);font-family:sans-serif;";
-  document.body.appendChild(bulkBtn);
-
-  // 4. Create Bulk Upload Modal Popup (Full English UI)
-  const modal = document.createElement("div");
-  modal.style.cssText = "display:none;position:fixed;inset:0;background:rgba(0,0,0,0.65);z-index:99999;align-items:center;justify-content:center;padding:16px;font-family:sans-serif;";
-  modal.innerHTML = `
-    <div style="background:#fff;width:100%;max-width:560px;border-radius:14px;padding:22px;max-height:88vh;overflow-y:auto;box-shadow:0 12px 35px rgba(0,0,0,0.4);">
-      <div style="display:flex;justify-content:space-between;align-items:center;border-bottom:2px solid #f0f0f0;padding-bottom:12px;margin-bottom:14px;">
-        <h3 style="margin:0;color:#801b1b;font-size:17px;">📋 Bulk Add Buyers & WhatsApp Invite</h3>
-        <button id="mpBulkClose" style="background:none;border:none;font-size:24px;cursor:pointer;color:#666;line-height:1;">&times;</button>
-      </div>
-
-      <div style="margin-bottom:12px;background:#fdf3f3;padding:10px 12px;border-radius:8px;border:1px solid #f3d0d0;font-size:12px;color:#444;">
-        <b>💡 How to Use:</b><br>
-        1. First select your <b>Category</b> on the main screen (e.g., Category 1 - Ernakulam).<br>
-        2. Upload a <b>CSV/Text file</b> below OR directly copy-paste numbers from Excel/Notepad.
-      </div>
-
-      <div style="margin-bottom:12px;">
-        <label style="font-size:12px;font-weight:bold;color:#333;display:block;margin-bottom:5px;">Option A: Upload CSV / Text File</label>
-        <input type="file" id="mpCsvInput" accept=".csv,.txt" style="width:100%;padding:8px;border:1px solid #ccc;border-radius:6px;font-size:12px;background:#fafafa;" />
-      </div>
-
-      <div style="margin-bottom:14px;">
-        <label style="font-size:12px;font-weight:bold;color:#333;display:block;margin-bottom:5px;">
-          Option B: Paste Contact List (One contact per line)
-        </label>
-        <div style="font-size:11px;color:#666;margin-bottom:5px;">
-          Format: <b>Shop Name, 10-Digit Mobile, City</b> (Or simply paste 10-digit mobile numbers)
-        </div>
-        <textarea id="mpBulkTextarea" rows="6" placeholder="Raju Textiles, 9876543210, Ernakulam&#10;Kochi Silks, 9123456789, Kochi&#10;8891173438" style="width:100%;padding:10px;border:1px solid #ccc;border-radius:8px;font-family:monospace;font-size:12px;box-sizing:border-box;"></textarea>
-      </div>
-
-      <button id="mpProcessBulkBtn" style="width:100%;background:#801b1b;color:#fff;border:none;padding:13px;border-radius:8px;font-weight:bold;cursor:pointer;font-size:14px;">
-        ⚡ ADD ALL BUYERS & GENERATE WHATSAPP LINKS
-      </button>
-
-      <div id="mpBulkQueueArea" style="margin-top:16px;display:none;">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
-          <h4 style="margin:0;color:#1b5e20;font-size:14px;">✅ Buyers Added! Click 'Send' one-by-one:</h4>
-          <span id="mpBulkCountBadge" style="background:#e8f5e9;color:#1b5e20;padding:3px 8px;border-radius:12px;font-size:11px;font-weight:bold;"></span>
-        </div>
-        <div id="mpBulkListContainer" style="max-height:240px;overflow-y:auto;border:1px solid #e0e0e0;border-radius:8px;padding:8px;background:#fafafa;"></div>
-      </div>
-    </div>
-  `;
-  document.body.appendChild(modal);
-
-  bulkBtn.onclick = () => { modal.style.display = "flex"; };
-  document.getElementById("mpBulkClose").onclick = () => { modal.style.display = "none"; };
-
-  // Load CSV file into textarea
-  document.getElementById("mpCsvInput").addEventListener("change", function(e) {
-    const file = e.target.files[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = function(evt) {
-      document.getElementById("mpBulkTextarea").value = evt.target.result;
-    };
-    reader.readAsText(file);
-  });
-
-  // Parse contacts, add to app, and generate English WhatsApp links
-  document.getElementById("mpProcessBulkBtn").addEventListener("click", async function() {
-    const raw = document.getElementById("mpBulkTextarea").value.trim();
-    if (!raw) {
-      alert("Please paste contact numbers or upload a CSV file first!");
-      return;
-    }
-
-    const lines = raw.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
-    const parsedContacts = [];
-
-    lines.forEach((line, idx) => {
-      const parts = line.split(/[,\t;]+/).map(s => s.trim()).filter(Boolean);
-      let name = "", phone = "", place = "Ernakulam";
-
-      parts.forEach(p => {
-        const digits = p.replace(/\D/g, "");
-        if (digits.length >= 10 && !phone) {
-          phone = digits.slice(-10);
-        } else if (!name) {
-          name = p;
-        } else {
-          place = p;
-        }
-      });
-
-      if (phone && phone.length === 10) {
-        if (!name) name = "Buyer " + (idx + 1);
-        parsedContacts.push({ name, phone, place });
-      }
-    });
-
-    if (parsedContacts.length === 0) {
-      alert("No valid 10-digit mobile numbers found! Please check your list.");
-      return;
-    }
-
-    const btn = document.getElementById("mpProcessBulkBtn");
-    btn.innerText = "⏳ Adding Buyers... Please wait";
-    btn.disabled = true;
-
-    const listContainer = document.getElementById("mpBulkListContainer");
-    listContainer.innerHTML = "";
-    document.getElementById("mpBulkQueueArea").style.display = "block";
-    document.getElementById("mpBulkCountBadge").innerText = parsedContacts.length + " Contacts";
-
-    for (let i = 0; i < parsedContacts.length; i++) {
-      const c = parsedContacts[i];
-
-      try {
-        const inputs = Array.from(document.querySelectorAll("input"));
-        const nameInp = inputs.find(el => el.placeholder && (el.placeholder.toLowerCase().includes("xyz") || el.placeholder.toLowerCase().includes("shop") || el.placeholder.toLowerCase().includes("name")));
-        const phoneInp = inputs.find(el => el.placeholder && (el.placeholder.includes("889") || el.placeholder.toLowerCase().includes("mobile") || el.placeholder.toLowerCase().includes("10")));
-        const placeInp = inputs.find(el => el.placeholder && (el.placeholder.toLowerCase().includes("ernakulam") || el.placeholder.toLowerCase().includes("place") || el.placeholder.toLowerCase().includes("location")));
-        const addBtn = Array.from(document.querySelectorAll("button")).find(b => b.innerText.toUpperCase().includes("ADD BUYER & CREATE"));
-
-        if (nameInp && phoneInp && addBtn) {
-          const origOpen = window.open;
-          const origAlert = window.alert;
-          window.open = function() {};
-          window.alert = function() {};
-
-          nameInp.value = c.name;
-          nameInp.dispatchEvent(new Event("input", { bubbles: true }));
-          phoneInp.value = c.phone;
-          phoneInp.dispatchEvent(new Event("input", { bubbles: true }));
-          if (placeInp) {
-            placeInp.value = c.place;
-            placeInp.dispatchEvent(new Event("input", { bubbles: true }));
+      const oldChats = oldDB.chats || {};
+      const newChats = newDB.chats || {};
+      for (const bId of Object.keys(newChats)) {
+        const oldList = oldChats[bId] || [];
+        const newList = newChats[bId] || [];
+        if (newList.length > oldList.length) {
+          const lastMsg = newList[newList.length - 1];
+          const buyer = (newDB.buyers && newDB.buyers[bId]) || { name: lastMsg.sender || "Customer" };
+          if (lastMsg.from !== "shop") {
+            showSmartNotification(
+              `Message from ${buyer.nickname || buyer.name}`,
+              `💬 "${lastMsg.text}"`,
+              { type: "chat", buyerId: bId }
+            );
+            return;
           }
-          addBtn.click();
-
-          window.open = origOpen;
-          window.alert = origAlert;
         }
-      } catch (e) {}
-
-      const engMsg = buildEnglishInviteMessage(c.name, c.phone);
-      const waLink = `https://wa.me/91${c.phone}?text=${encodeURIComponent(engMsg)}`;
-
-      const row = document.createElement("div");
-      row.style.cssText = "display:flex;justify-content:space-between;align-items:center;padding:8px 10px;border-bottom:1px solid #eee;background:#fff;border-radius:6px;margin-bottom:6px;";
-      row.innerHTML = `
-        <div style="font-size:12px;">
-          <b style="color:#222;">${i + 1}. ${c.name}</b> <span style="color:#666;">(${c.place})</span><br>
-          <span style="color:#801b1b;font-family:monospace;font-size:12px;">📞 ${c.phone}</span>
-        </div>
-        <a href="${waLink}" target="_blank" class="mp-wa-send-btn" style="background:#25D366;color:#fff;text-decoration:none;padding:7px 14px;border-radius:6px;font-size:12px;font-weight:bold;white-space:nowrap;">
-          📲 Send WhatsApp
-        </a>
-      `;
-      const sendBtn = row.querySelector(".mp-wa-send-btn");
-      sendBtn.addEventListener("click", function() {
-        this.style.background = "#9e9e9e";
-        this.innerText = "✓ Sent";
-      });
-      listContainer.appendChild(row);
+      }
     }
 
-    btn.innerText = "⚡ ADD ALL BUYERS & GENERATE WHATSAPP LINKS";
-    btn.disabled = false;
-  });
-})();
-</script>
+    // 4. Real-Time Cloud Sync Engine with Smart Merge
+    let isPulling = false;
+    let isBulkProcessing = false;
+    let lastSyncedDBString = localStorage.getItem(STORAGE_KEY) || "";
+
+    function mergeDatabases(localDB, cloudDB) {
+      if (!localDB) return cloudDB;
+      if (!cloudDB) return localDB;
+      const merged = JSON.parse(JSON.stringify(cloudDB));
+
+      merged.buyers = Object.assign({}, localDB.buyers || {}, cloudDB.buyers || {});
+      merged.categories = Object.assign({}, localDB.categories || {}, cloudDB.categories || {});
+      Object.keys(merged.categories).forEach(catKey => {
+        const cIds = cloudDB.categories?.[catKey]?.buyerIds || [];
+        const lIds = localDB.categories?.[catKey]?.buyerIds || [];
+        merged.categories[catKey].buyerIds = Array.from(new Set([...cIds, ...lIds]));
+      });
+
+      Object.values(merged.buyers).forEach(b => {
+        if (b && b.id && b.catKey && merged.categories[b.catKey]) {
+          if (!merged.categories[b.catKey].buyerIds.includes(b.id)) {
+            merged.categories[b.catKey].buyerIds.unshift(b.id);
+          }
+        }
+      });
+
+      const orderMap = new Map();
+      [...(cloudDB.orders || []), ...(localDB.orders || [])].forEach(o => {
+        if (o && o.id) orderMap.set(String(o.id), o);
+      });
+      merged.orders = Array.from(orderMap.values());
+
+      merged.chats = Object.assign({}, localDB.chats || {}, cloudDB.chats || {});
+      Object.keys(merged.chats).forEach(bId => {
+        const lChats = localDB.chats?.[bId] || [];
+        const cChats = cloudDB.chats?.[bId] || [];
+        merged.chats[bId] = cChats.length >= lChats.length ? cChats : lChats;
+      });
+
+      return merged;
+    }
+
+    const origSetItem = localStorage.setItem.bind(localStorage);
+
+    async function pushToCloudNow() {
+      if (isPulling || isBulkProcessing) return;
+      try {
+        const currentRaw = localStorage.getItem(STORAGE_KEY);
+        if (!currentRaw || currentRaw === lastSyncedDBString) return;
+        lastSyncedDBString = currentRaw;
+        await fetch(FB_URL, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ [STORAGE_KEY]: currentRaw })
+        });
+      } catch (e) {}
+    }
+
+    async function pullFromCloudNow() {
+      if (isBulkProcessing) return;
+      try {
+        const res = await fetch(FB_URL + "?t=" + Date.now(), { cache: "no-store" });
+        if (!res.ok) return;
+        const cloudWrapper = await res.json();
+        if (!cloudWrapper || !cloudWrapper[STORAGE_KEY]) {
+          await pushToCloudNow();
+          return;
+        }
+        const cloudDBStr = cloudWrapper[STORAGE_KEY];
+        if (cloudDBStr === lastSyncedDBString) return;
+
+        isPulling = true;
+        const oldDB = lastSyncedDBString ? JSON.parse(lastSyncedDBString) : null;
+        const cloudDB = JSON.parse(cloudDBStr);
+        const mergedDB = mergeDatabases(oldDB, cloudDB);
+        const mergedStr = JSON.stringify(mergedDB);
+
+        detectChangesAndNotify(oldDB, mergedDB);
+
+        lastSyncedDBString = mergedStr;
+        origSetItem(STORAGE_KEY, mergedStr);
+        db = mergedDB;
+
+        const activeEl = document.activeElement;
+        const isTyping = activeEl && (activeEl.tagName === "INPUT" || activeEl.tagName === "TEXTAREA");
+        if (!isTyping) {
+          renderShopView();
+        }
+        isPulling = false;
+      } catch (e) {
+        isPulling = false;
+      }
+    }
+
+    localStorage.setItem = function(k, v) {
+      origSetItem(k, v);
+      if (k === STORAGE_KEY && !isPulling && !isBulkProcessing) {
+        setTimeout(pushToCloudNow, 80);
+      }
+    };
+
+    pullFromCloudNow();
+    setInterval(pullFromCloudNow, 2000);
+
+    // 5. Bulk Buyer Upload Button & Modal
+    const bulkBtn = document.createElement("button");
+    bulkBtn.innerHTML = "📋 + Bulk Add Buyers";
+    bulkBtn.style.cssText = "position:fixed;bottom:75px;right:20px;background:#68150f;color:#fff;border:2px solid #ffcc00;padding:12px 18px;border-radius:50px;font-weight:bold;font-size:13px;cursor:pointer;z-index:99998;box-shadow:0 6px 20px rgba(0,0,0,0.35);font-family:sans-serif;";
+    document.body.appendChild(bulkBtn);
+
+    const modal = document.createElement("div");
+    modal.style.cssText = "display:none;position:fixed;inset:0;background:rgba(0,0,0,0.65);z-index:99999;align-items:center;justify-content:center;padding:16px;font-family:sans-serif;";
+    modal.innerHTML = `
+      <div style="background:#fff;width:100%;max-width:560px;border-radius:14px;padding:22px;max-height:88vh;overflow-y:auto;box-shadow:0 12px 35px rgba(0,0,0,0.4);">
+        <div style="display:flex;justify-content:space-between;align-items:center;border-bottom:2px solid #f0f0f0;padding-bottom:12px;margin-bottom:14px;">
+          <h3 style="margin:0;color:#68150f;font-size:17px;">📋 Bulk Add Buyers & WhatsApp Invite</h3>
+          <button id="mpBulkClose" style="background:none;border:none;font-size:24px;cursor:pointer;color:#666;line-height:1;">&times;</button>
+        </div>
+        <div style="margin-bottom:12px;">
+          <label style="font-size:12px;font-weight:bold;color:#333;display:block;margin-bottom:5px;">1. Select Target Category for Bulk Buyers</label>
+          <select id="mpBulkCatSelect" style="width:100%;padding:9px;border:2px solid #eb4d26;border-radius:8px;font-size:13px;font-weight:bold;color:#68150f;background:#fff8f6;"></select>
+        </div>
+        <div style="margin-bottom:12px;">
+          <label style="font-size:12px;font-weight:bold;color:#333;display:block;margin-bottom:5px;">2. Option A: Upload CSV / Text File</label>
+          <input type="file" id="mpCsvInput" accept=".csv,.txt" style="width:100%;padding:8px;border:1px solid #ccc;border-radius:6px;font-size:12px;background:#fafafa;" />
+        </div>
+        <div style="margin-bottom:14px;">
+          <label style="font-size:12px;font-weight:bold;color:#333;display:block;margin-bottom:5px;">Option B: Paste Contact List (One contact per line)</label>
+          <div style="font-size:11px;color:#666;margin-bottom:5px;">Format: <b>Shop Name, 10-Digit Mobile, City</b> (Or simply paste 10-digit mobile numbers)</div>
+          <textarea id="mpBulkTextarea" rows="5" placeholder="Raju Textiles, 9876543210, Ernakulam&#10;Kochi Silks, 9123456789, Kochi&#10;8891173438" style="width:100%;padding:10px;border:1px solid #ccc;border-radius:8px;font-family:monospace;font-size:12px;box-sizing:border-box;"></textarea>
+        </div>
+        <button id="mpProcessBulkBtn" style="width:100%;background:#68150f;color:#fff;border:none;padding:13px;border-radius:8px;font-weight:bold;cursor:pointer;font-size:14px;">
+          ⚡ ADD ALL BUYERS & GENERATE WHATSAPP LINKS
+        </button>
+        <div id="mpBulkQueueArea" style="margin-top:16px;display:none;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+            <h4 style="margin:0;color:#1b5e20;font-size:14px;">✅ Buyers Saved! Click 'Send' one-by-one:</h4>
+            <span id="mpBulkCountBadge" style="background:#e8f5e9;color:#1b5e20;padding:3px 8px;border-radius:12px;font-size:11px;font-weight:bold;"></span>
+          </div>
+          <div id="mpBulkListContainer" style="max-height:240px;overflow-y:auto;border:1px solid #e0e0e0;border-radius:8px;padding:8px;background:#fafafa;"></div>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(modal);
+
+    bulkBtn.onclick = () => {
+      const sel = document.getElementById("mpBulkCatSelect");
+      sel.innerHTML = Object.values(db.categories || {}).map(c =>
+        `<option value="${c.id}" ${c.id === selectedCatKey ? "selected" : ""}>${c.name} (${c.place})</option>`
+      ).join("");
+      modal.style.display = "flex";
+    };
+    document.getElementById("mpBulkClose").onclick = () => { modal.style.display = "none"; };
+
+    document.getElementById("mpCsvInput").addEventListener("change", function(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = function(evt) { document.getElementById("mpBulkTextarea").value = evt.target.result; };
+      reader.readAsText(file);
+    });
+
+    document.getElementById("mpProcessBulkBtn").addEventListener("click", async function() {
+      const raw = document.getElementById("mpBulkTextarea").value.trim();
+      if (!raw) { alert("Please paste contact numbers or upload a CSV file first!"); return; }
+      const chosenCatKey = document.getElementById("mpBulkCatSelect").value;
+      const defaultPlace = db.categories?.[chosenCatKey]?.place || "Ernakulam";
+      const lines = raw.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+      const parsedContacts = [];
+
+      lines.forEach((line, idx) => {
+        const parts = line.split(/[,\t;]+/).map(s => s.trim()).filter(Boolean);
+        let name = "", phone = "", place = defaultPlace;
+        parts.forEach(p => {
+          const digits = p.replace(/\D/g, "");
+          if (digits.length >= 10 && !phone) phone = digits.slice(-10);
+          else if (!name) name = p;
+          else place = p;
+        });
+        if (phone && phone.length === 10) {
+          if (!name) name = "Buyer " + (idx + 1);
+          parsedContacts.push({ name, phone, place });
+        }
+      });
+
+      if (parsedContacts.length === 0) { alert("No valid 10-digit mobile numbers found!"); return; }
+
+      isBulkProcessing = true;
+      const btn = document.getElementById("mpProcessBulkBtn");
+      btn.innerText = "⏳ Saving All Buyers to Cloud...";
+      btn.disabled = true;
+
+      const listContainer = document.getElementById("mpBulkListContainer");
+      listContainer.innerHTML = "";
+      document.getElementById("mpBulkQueueArea").style.display = "block";
+      document.getElementById("mpBulkCountBadge").innerText = parsedContacts.length + " Buyers Added";
+
+      parsedContacts.forEach((c, i) => {
+        addBuyerDirectlyToDB(c.name, c.phone, c.place, chosenCatKey);
+        const inv = buildInviteLinks(c.name, c.phone, c.place);
+        const row = document.createElement("div");
+        row.style.cssText = "display:flex;justify-content:space-between;align-items:center;padding:8px 10px;border-bottom:1px solid #eee;background:#fff;border-radius:6px;margin-bottom:6px;";
+        row.innerHTML = `
+          <div style="font-size:12px;">
+            <b style="color:#222;">${i + 1}. ${c.name}</b> <span style="color:#666;">(${c.place})</span><br>
+            <span style="color:#68150f;font-family:monospace;font-size:12px;">📞 ${c.phone}</span>
+          </div>
+          <a href="${inv.waUrl}" target="_blank" class="mp-wa-send-btn" style="background:#25D366;color:#fff;text-decoration:none;padding:7px 14px;border-radius:6px;font-size:12px;font-weight:bold;white-space:nowrap;">
+            📲 Send WhatsApp
+          </a>
+        `;
+        row.querySelector(".mp-wa-send-btn").addEventListener("click", function() {
+          this.style.background = "#9e9e9e";
+          this.innerText = "✓ Sent";
+        });
+        listContainer.appendChild(row);
+      });
+
+      isBulkProcessing = false;
+      selectedCatKey = chosenCatKey;
+      renderShopView();
+      await pushToCloudNow();
+
+      btn.innerText = "✅ ALL BUYERS ADDED!";
+      setTimeout(() => {
+        btn.innerText = "⚡ ADD ALL BUYERS & GENERATE WHATSAPP LINKS";
+        btn.disabled = false;
+      }, 2500);
+    });
+  })();
+  </script>
+</body>
 </html>
