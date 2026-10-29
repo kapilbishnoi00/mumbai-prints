@@ -54,13 +54,13 @@
           <div>
             <div class="flex items-center gap-2">
               <h1 class="text-lg font-black uppercase leading-none">Mumbai Prints</h1>
-              <span id="shopCloudBadge" class="text-[10px] bg-emerald-700 text-white font-bold px-2 py-0.5 rounded-full">🔄 Syncing...</span>
+              <span id="shopCloudBadge" class="text-[10px] bg-emerald-700 text-white font-bold px-2 py-0.5 rounded-full">⚡ Live Sync</span>
             </div>
             <p class="text-[10px] text-orange-200 uppercase tracking-widest mt-0.5">🏪 Shop Mode • QSP is our USP</p>
           </div>
         </div>
         <div class="flex items-center gap-1.5">
-          <button onclick="forceCloudPull()" class="bg-emerald-700 text-white text-[11px] font-bold px-2.5 py-1.5 rounded-lg">🔄 Sync</button>
+          <button onclick="forceCloudPull(true)" class="bg-emerald-700 text-white text-[11px] font-bold px-2.5 py-1.5 rounded-lg">🔄 Sync</button>
           <button onclick="toggleStudioModal()" class="bg-mp-orange hover:bg-orange-600 text-white text-xs font-bold px-3 py-1.5 rounded-lg shadow">📤 Upload & Folders</button>
           <button onclick="shopLogout()" class="bg-mp-maroon-dark text-orange-200 text-xs font-bold px-2.5 py-1.5 rounded-lg border border-orange-800">Logout</button>
         </div>
@@ -161,6 +161,15 @@
     </div>
   </div>
 
+  <!-- HIDDEN CHAT PHOTO INPUT FOR SHOP -->
+  <input type="file" id="shopChatPhotoInput" accept="image/*" class="hidden" onchange="sendShopChatPhoto(this)">
+
+  <!-- FULLSCREEN IMAGE VIEWER MODAL -->
+  <div id="fullImgModal" onclick="this.classList.add('hidden')" class="hidden fixed inset-0 bg-black/85 z-[99999] flex flex-col items-center justify-center p-4 cursor-zoom-out">
+    <img id="fullImgTarget" src="" class="max-w-full max-h-[85vh] rounded-xl shadow-2xl border-2 border-white object-contain">
+    <span class="mt-3 text-white text-xs bg-black/60 px-4 py-1.5 rounded-full">Tap anywhere to close</span>
+  </div>
+
   <script>
     const FB_URL = "https://mumbai-prints-default-rtdb.firebaseio.com/mp_cloud_db_2026.json";
     const STORAGE_KEY = 'mumbai_prints_master_db_v1';
@@ -199,6 +208,13 @@
     let cloudReady = false;
     let isSyncing = false;
     let lastCloudString = "";
+    let lastShopViewSignature = "";
+
+    function openFullImage(src) {
+      if (!src) return;
+      document.getElementById('fullImgTarget').src = src;
+      document.getElementById('fullImgModal').classList.remove('hidden');
+    }
 
     function getCanonicalBuyerId(phone) {
       const clean = String(phone || '').replace(/\D/g, '').slice(-10);
@@ -229,7 +245,7 @@
       const idMap = {};
       const newBuyers = {};
       Object.values(targetDB.buyers).forEach(b => {
-        if (!b || !b.phone) return;
+        if (!b || !b.phone || b.deleted) return;
         const cleanPhone = String(b.phone).replace(/\D/g, '').slice(-10);
         if (cleanPhone.length !== 10) return;
         const canonId = 'b_' + cleanPhone;
@@ -245,20 +261,28 @@
         if (!newChats[canonId]) newChats[canonId] = [];
         const seen = new Set(newChats[canonId].map(m => m.msgId || (m.sender + '|' + m.text + '|' + m.time)));
         list.forEach((m, idx) => {
+          if (!m || m.deleted) return;
           if (!m.msgId) m.msgId = 'm_' + (m.ts || idx) + '_' + String(m.text).slice(0, 10);
-          const key = m.msgId || (m.sender + '|' + m.text + '|' + m.time);
+          const key = m.msgId;
           if (!seen.has(key)) {
             seen.add(key);
             newChats[canonId].push(m);
           }
         });
+        newChats[canonId].sort((a, b) => (a.ts || 0) - (b.ts || 0));
       });
       targetDB.chats = newChats;
 
-      targetDB.orders.forEach(o => {
+      targetDB.orders = (targetDB.orders || []).filter(o => o && !o.deleted);
+      targetDB.orders.forEach((o, idx) => {
         if (o.buyerId && idMap[o.buyerId]) o.buyerId = idMap[o.buyerId];
         else if (o.buyerPhone) o.buyerId = getCanonicalBuyerId(o.buyerPhone);
+        if (!o.ts) {
+          const parsedNum = Number(String(o.id).replace(/\D/g, '').slice(0, 13));
+          o.ts = parsedNum > 1600000000000 ? parsedNum : (1700000000000 + idx);
+        }
       });
+      targetDB.orders.sort((a, b) => (b.ts || 0) - (a.ts || 0));
 
       Object.keys(targetDB.categories).forEach(k => {
         targetDB.categories[k].buyerIds = [];
@@ -282,11 +306,14 @@
       merged.folders = Array.from(new Set([...(c.folders || []), ...(l.folders || [])]));
       merged.categories = Object.assign({}, l.categories, c.categories);
 
-      merged.buyers = Object.assign({}, l.buyers, c.buyers);
-      Object.keys(l.buyers || {}).forEach(id => {
-        if (c.buyers && c.buyers[id]) {
-          merged.buyers[id] = Object.assign({}, c.buyers[id], l.buyers[id]);
-          if (c.buyers[id].nickname && !l.buyers[id].nickname) merged.buyers[id].nickname = c.buyers[id].nickname;
+      merged.buyers = Object.assign({}, c.buyers, l.buyers);
+      Object.keys(c.buyers || {}).forEach(id => {
+        if (l.buyers && l.buyers[id]) {
+          const lTime = l.buyers[id].updatedAt || 0;
+          const cTime = c.buyers[id].updatedAt || 0;
+          merged.buyers[id] = cTime > lTime
+            ? Object.assign({}, l.buyers[id], c.buyers[id])
+            : Object.assign({}, c.buyers[id], l.buyers[id]);
         }
       });
 
@@ -295,7 +322,8 @@
       allChatBuyerIds.forEach(bId => {
         const combined = [...(c.chats?.[bId] || []), ...(l.chats?.[bId] || [])];
         const uniqueMap = new Map();
-        combined.forEach((m, idx) => {
+        combined.forEach(m => {
+          if (!m || m.deleted) return;
           const key = m.msgId || `${m.from}_${m.sender}_${m.text}_${m.time}`;
           if (!uniqueMap.has(key)) uniqueMap.set(key, m);
         });
@@ -306,7 +334,12 @@
 
       const orderMap = new Map();
       [...(c.orders || []), ...(l.orders || [])].forEach(o => {
-        if (o && o.id) orderMap.set(String(o.id), o);
+        if (o && o.id && !o.deleted) {
+          const ex = orderMap.get(String(o.id));
+          if (!ex || (o.updatedAt || 0) >= (ex.updatedAt || 0)) {
+            orderMap.set(String(o.id), o);
+          }
+        }
       });
       merged.orders = Array.from(orderMap.values()).sort((a, b) => (b.ts || 0) - (a.ts || 0));
 
@@ -341,7 +374,7 @@
     async function pushToCloudSafe() {
       if (isSyncing) return;
       isSyncing = true;
-      setShopSyncBadge('⬆️ Saving...', 'bg-amber-600');
+      setShopSyncBadge('⚡ Sending...', 'bg-amber-600');
       try {
         const res = await fetch(FB_URL + "?t=" + Date.now(), { cache: "no-store" });
         if (res.ok) {
@@ -360,14 +393,14 @@
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ [STORAGE_KEY]: finalStr, updatedAt: Date.now() })
         });
-        setShopSyncBadge('🟢 Synced', 'bg-emerald-700');
+        setShopSyncBadge('⚡ Live Sync', 'bg-emerald-700');
       } catch (e) {
         setShopSyncBadge('⚠️ Offline', 'bg-red-700');
       }
       isSyncing = false;
     }
 
-    async function forceCloudPull() {
+    async function forceCloudPull(forceRender) {
       if (isSyncing) return;
       isSyncing = true;
       try {
@@ -376,7 +409,7 @@
           const cloudWrapper = await res.json();
           if (cloudWrapper && cloudWrapper[STORAGE_KEY]) {
             const cloudStr = cloudWrapper[STORAGE_KEY];
-            if (cloudStr !== lastCloudString || !cloudReady) {
+            if (cloudStr !== lastCloudString || !cloudReady || forceRender) {
               const oldDB = JSON.parse(JSON.stringify(db));
               const cloudDB = JSON.parse(cloudStr);
               db = mergeDatabases(db, cloudDB);
@@ -388,10 +421,16 @@
               }
               lastCloudString = mergedStr;
 
-              const activeEl = document.activeElement;
-              const isTyping = activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA');
-              if (!isTyping) {
-                renderShopView();
+              // If currently inside chat_view and typing, only update messages area without destroying input box!
+              const chatScroll = document.getElementById('shopChatScroll');
+              if (currentShopTab === 'categories' && drillStep === 'chat_view' && chatScroll && !forceRender) {
+                renderShopChatMessagesOnly();
+              } else {
+                const activeEl = document.activeElement;
+                const isTyping = activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA');
+                if (!isTyping || forceRender) {
+                  renderShopView();
+                }
               }
             }
           } else {
@@ -402,7 +441,7 @@
           }
         }
         cloudReady = true;
-        setShopSyncBadge('🟢 Synced', 'bg-emerald-700');
+        setShopSyncBadge('⚡ Live Sync', 'bg-emerald-700');
       } catch (e) {
         cloudReady = true;
         setShopSyncBadge('⚠️ Retry', 'bg-red-700');
@@ -449,8 +488,7 @@
         document.getElementById('shopMainApp').classList.remove('hidden');
         db = normalizeAndMigrateDB(db);
         renderShopView();
-        await forceCloudPull();
-        renderShopView();
+        await forceCloudPull(true);
       }
     }
 
@@ -465,6 +503,33 @@
           : 'py-2 px-1 rounded-xl flex flex-col items-center justify-center text-slate-500 font-bold text-xs';
       });
       renderShopView();
+    }
+
+    function buildShopChatMessagesHtml(buyerId) {
+      const msgs = db.chats[buyerId] || [];
+      return msgs.filter(m => !m.deleted).map(m => {
+        const isShop = m.from === 'shop';
+        const imgSrc = m.chatImg || m.productImg || '';
+        return `
+          <div class="flex flex-col ${isShop ? 'items-end' : 'items-start'}">
+            <div class="max-w-[82%] rounded-xl p-2.5 shadow-sm border ${isShop ? 'bg-[#ffeedd] border-orange-200 text-mp-maroon' : 'bg-white border-slate-200 text-slate-900'}">
+              <div class="text-[10px] font-bold opacity-75">${m.sender} • ${m.time || ''}</div>
+              ${imgSrc ? `<img src="${imgSrc}" onclick="openFullImage('${imgSrc}')" class="w-full max-h-48 object-cover rounded-lg mt-1.5 border cursor-zoom-in">` : ''}
+              ${m.productTitle ? `<div class="text-[10px] font-bold mt-1 text-mp-orange">${m.productTitle}</div>` : ''}
+              ${m.text ? `<div class="text-xs mt-1 font-medium whitespace-pre-line">${m.text}</div>` : ''}
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function renderShopChatMessagesOnly() {
+      const sc = document.getElementById('shopChatScroll');
+      if (!sc) return;
+      sc.innerHTML = buildShopChatMessagesHtml(selectedBuyerId);
+      sc.scrollTop = sc.scrollHeight;
+      const ordBadge = document.getElementById('shopOrdBadge');
+      if (ordBadge) ordBadge.innerText = (db.orders || []).length;
     }
 
     function renderShopView() {
@@ -558,19 +623,7 @@
         else if (drillStep === 'chat_view') {
           const b = db.buyers[selectedBuyerId];
           const cat = b ? db.categories[b.catKey] : { name: 'Category', place: '' };
-          const msgs = db.chats[selectedBuyerId] || [];
-          let msgHtml = msgs.map(m => {
-            const isShop = m.from === 'shop';
-            return `
-              <div class="flex flex-col ${isShop ? 'items-end' : 'items-start'}">
-                <div class="max-w-[82%] rounded-xl p-2.5 shadow-sm border ${isShop ? 'bg-[#ffeedd] border-orange-200 text-mp-maroon' : 'bg-white border-slate-200 text-slate-900'}">
-                  <div class="text-[10px] font-bold opacity-75">${m.sender} • ${m.time || ''}</div>
-                  ${m.productImg ? `<img src="${m.productImg}" class="w-full h-32 object-cover rounded mt-1 border"><div class="text-[10px] font-bold mt-1">${m.productTitle || ''}</div>` : ''}
-                  <div class="text-xs mt-1 font-medium">${m.text}</div>
-                </div>
-              </div>
-            `;
-          }).join('');
+          const msgHtml = buildShopChatMessagesHtml(selectedBuyerId);
 
           box.innerHTML = `
             <div class="bg-white rounded-2xl shadow-md border border-slate-200 overflow-hidden flex flex-col h-[72vh]">
@@ -585,9 +638,12 @@
                 <button onclick="shopToggleFav('${selectedBuyerId}')" class="text-lg">${b && b.isFav ? '⭐' : '☆'}</button>
               </div>
               <div id="shopChatScroll" class="flex-1 p-3 overflow-y-auto space-y-2.5 bg-[#f7f1ee] text-xs">${msgHtml}</div>
-              <div class="p-2.5 bg-white border-t flex gap-2">
-                <input type="text" id="shopChatIn" onkeydown="if(event.key==='Enter') shopSendChat()" placeholder="Type message to ${b ? b.name : 'buyer'}..." class="flex-1 border-2 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-mp-orange">
-                <button onclick="shopSendChat()" class="bg-mp-maroon text-white font-bold px-4 py-2 rounded-xl text-xs">Send</button>
+              <div class="p-2.5 bg-white border-t flex items-center gap-2">
+                <button onclick="document.getElementById('shopChatPhotoInput').click()" title="Send Photo in Chat" class="bg-orange-100 hover:bg-orange-200 text-mp-maroon border border-orange-300 font-bold px-3 py-2 rounded-xl text-sm shrink-0">
+                  📷
+                </button>
+                <input type="text" id="shopChatIn" onkeydown="if(event.key==='Enter') shopSendChat()" placeholder="Type message or tap 📷..." class="flex-1 border-2 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-mp-orange">
+                <button onclick="shopSendChat()" class="bg-mp-maroon text-white font-bold px-4 py-2 rounded-xl text-xs shrink-0">Send</button>
               </div>
             </div>
           `;
@@ -596,35 +652,38 @@
         }
       }
       else if (currentShopTab === 'orders') {
+        const sortedOrders = [...(db.orders || [])].sort((a, b) => (b.ts || 0) - (a.ts || 0));
         let html = `
           <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-4 space-y-3">
             <div class="border-b pb-2 flex justify-between items-center">
               <div>
-                <h2 class="font-black text-mp-maroon text-sm uppercase">📦 All Categories Order List</h2>
-                <p class="text-[11px] text-slate-500">Newest orders on top • Tap to open customer chat</p>
+                <h2 class="font-black text-mp-maroon text-sm uppercase">📦 All Categories Order List (Latest First)</h2>
+                <p class="text-[11px] text-slate-500">Chronological order • Newest orders appear at #1</p>
               </div>
-              <span class="bg-orange-100 text-mp-maroon font-bold text-xs px-2.5 py-1 rounded-full">${(db.orders || []).length} Orders</span>
+              <span class="bg-orange-100 text-mp-maroon font-bold text-xs px-2.5 py-1 rounded-full">${sortedOrders.length} Orders</span>
             </div>
         `;
-        if (!db.orders || db.orders.length === 0) {
+        if (sortedOrders.length === 0) {
           html += `<div class="text-center py-12 text-xs text-slate-400">No orders received yet.</div>`;
         } else {
-          db.orders.forEach(o => {
+          sortedOrders.forEach((o, index) => {
             const canonId = o.buyerId || getCanonicalBuyerId(o.buyerPhone);
             const b = db.buyers[canonId] || { name: o.buyerName || 'Buyer', phone: o.buyerPhone || '', place: o.buyerPlace || 'Unknown', catKey: 'catX' };
             const cat = db.categories[b.catKey] || { name: 'Category X', place: b.place };
+            const status = o.status || 'Pending';
             html += `
               <div class="p-3 rounded-xl border-2 border-orange-100 bg-orange-50/40 flex flex-col sm:flex-row justify-between gap-3 items-start sm:items-center">
                 <div class="flex gap-3 items-center">
-                  <img src="${o.img}" class="w-16 h-16 object-cover rounded-lg border shrink-0">
+                  <img src="${o.img}" onclick="openFullImage('${o.img}')" class="w-16 h-16 object-cover rounded-lg border shrink-0 cursor-zoom-in">
                   <div>
                     <div class="flex flex-wrap gap-1.5 items-center mb-1">
+                      <span class="bg-mp-orange text-white text-[10px] font-black px-1.5 py-0.5 rounded">#${index + 1}</span>
                       <span class="bg-mp-maroon text-white text-[10px] font-bold px-2 py-0.5 rounded">${cat.name} (${cat.place})</span>
                       <span class="bg-orange-200 text-mp-maroon text-[10px] font-bold px-2 py-0.5 rounded">👤 ${b.nickname || b.name} (${b.phone || ''})</span>
-                      <span class="text-[10px] text-slate-400">${o.time || ''}</span>
+                      <span class="text-[10px] text-slate-500 font-semibold">${o.time || ''}</span>
                     </div>
                     <div class="text-xs font-bold text-slate-800">👕 Design: ${o.designTitle}</div>
-                    <div class="text-xs font-black text-mp-orange">📦 Ordered Qty: ${o.qty}</div>
+                    <div class="text-xs font-black text-mp-orange">📦 Ordered Qty: ${o.qty} • <span class="text-[10px] uppercase bg-white px-1.5 py-0.5 rounded border">${status}</span></div>
                   </div>
                 </div>
                 <button onclick="selectedBuyerId='${canonId}'; currentShopTab='categories'; drillStep='chat_view'; renderShopView();" class="bg-mp-maroon text-white text-xs font-bold px-3.5 py-2 rounded-xl shrink-0">
@@ -679,6 +738,7 @@
     function shopToggleFav(id) {
       if (db.buyers[id]) {
         db.buyers[id].isFav = !db.buyers[id].isFav;
+        db.buyers[id].updatedAt = Date.now();
         saveDB();
         renderShopView();
       }
@@ -688,6 +748,7 @@
       const b = db.buyers[id];
       if (!b || b.catKey === newCatKey) return;
       b.catKey = newCatKey;
+      b.updatedAt = Date.now();
       saveDB();
       alert(`Shifted ${b.name} to ${db.categories[newCatKey].name}!`);
       renderShopView();
@@ -718,8 +779,30 @@
         ts: now
       });
       input.value = '';
-      renderShopView();
+      renderShopChatMessagesOnly();
       saveDB();
+    }
+
+    function sendShopChatPhoto(fileInput) {
+      const file = fileInput.files && fileInput.files[0];
+      if (!file || !selectedBuyerId) return;
+      const caption = prompt('Add a caption for this photo (optional):', '') || '';
+      compressImageFile(file, 650, (compressedUrl) => {
+        if (!db.chats[selectedBuyerId]) db.chats[selectedBuyerId] = [];
+        const now = Date.now();
+        db.chats[selectedBuyerId].push({
+          msgId: 'm_img_' + now + '_' + Math.floor(Math.random() * 1000),
+          from: 'shop',
+          sender: 'Mumbai Prints (Shop)',
+          text: caption.trim() || '📷 Photo Attached',
+          chatImg: compressedUrl,
+          time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          ts: now
+        });
+        fileInput.value = '';
+        renderShopChatMessagesOnly();
+        saveDB();
+      });
     }
 
     function toggleStudioModal() {
@@ -728,13 +811,12 @@
       if (!m.classList.contains('hidden')) renderStudioModalContent();
     }
 
-    function compressImageFile(file, callback) {
+    function compressImageFile(file, maxW, callback) {
       const reader = new FileReader();
       reader.onload = function(e) {
         const img = new Image();
         img.onload = function() {
           const canvas = document.createElement('canvas');
-          const maxW = 800;
           const scale = img.width > maxW ? (maxW / img.width) : 1;
           canvas.width = img.width * scale;
           canvas.height = img.height * scale;
@@ -816,7 +898,7 @@
 
       let done = 0;
       Array.from(files).forEach((file, i) => {
-        compressImageFile(file, (compressedUrl) => {
+        compressImageFile(file, 800, (compressedUrl) => {
           db.designs.unshift({
             id: Date.now() + i,
             folder,
@@ -898,7 +980,8 @@
         place: cleanPlace,
         nickname: existing.nickname || '',
         catKey: targetCatKey,
-        isFav: existing.isFav || false
+        isFav: existing.isFav || false,
+        updatedAt: Date.now()
       };
 
       if (!db.chats[buyerId] || db.chats[buyerId].length === 0) {
@@ -1181,9 +1264,10 @@
       });
     })();
 
+    // Fast 700ms Real-Time Sync Loop
     initShopApp();
-    forceCloudPull();
-    setInterval(forceCloudPull, 2000);
+    forceCloudPull(true);
+    setInterval(() => forceCloudPull(false), 700);
   </script>
 </body>
 </html>
