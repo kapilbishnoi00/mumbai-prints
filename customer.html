@@ -22,41 +22,47 @@
 </head>
 <body class="min-h-screen pb-24 text-slate-800">
 
-  <!-- HEADER -->
+  <!-- HEADER WITH LOGOUT / SWITCH ACCOUNT -->
   <header class="bg-mp-maroon text-white shadow-md border-b-4 border-mp-orange sticky top-0 z-40">
-    <div class="max-w-xl mx-auto p-3.5 flex justify-between items-center">
+    <div class="max-w-xl mx-auto p-3 flex justify-between items-center gap-2">
       <div class="flex items-center gap-2.5">
         <div class="bg-white text-mp-maroon font-black text-lg px-2 py-0.5 rounded border-2 border-mp-orange shadow">MP</div>
         <div>
-          <div class="flex items-center gap-2">
-            <h1 class="text-lg font-black uppercase leading-none">Mumbai Prints</h1>
-            <span id="custCloudBadge" class="text-[10px] bg-emerald-700 text-white font-bold px-2 py-0.5 rounded-full">🔄 Connecting...</span>
+          <div class="flex items-center gap-1.5">
+            <h1 class="text-base sm:text-lg font-black uppercase leading-none">Mumbai Prints</h1>
+            <span id="custCloudBadge" class="text-[9px] bg-emerald-700 text-white font-bold px-2 py-0.5 rounded-full">⚡ Live</span>
           </div>
-          <p class="text-[10px] text-orange-200 uppercase tracking-widest mt-0.5">QSP is our USP</p>
+          <p id="custHeaderUserSub" class="text-[10px] text-orange-200 uppercase tracking-wider mt-0.5">QSP is our USP</p>
         </div>
       </div>
       <div class="flex items-center gap-1.5">
-        <button onclick="showAddToHomeScreenGuide()" class="bg-mp-orange text-white text-[11px] font-bold px-2.5 py-1 rounded-lg shadow">📲 Install App</button>
+        <button onclick="showAddToHomeScreenGuide()" class="bg-mp-orange text-white text-[10px] font-bold px-2 py-1.5 rounded-lg shadow">📲 App</button>
+        <button id="custLogoutBtn" onclick="customerLogout()" class="hidden bg-red-700 hover:bg-red-800 text-white text-[10px] font-bold px-2.5 py-1.5 rounded-lg border border-red-400">🚪 Logout</button>
       </div>
     </div>
   </header>
 
-  <!-- FIRST-TIME JOIN / INVITE SCREEN -->
-  <section id="customerJoinSection" class="hidden max-w-md mx-auto mt-8 p-4">
+  <!-- LOGIN / SWITCH ACCOUNT / NEW REGISTRATION SCREEN -->
+  <section id="customerJoinSection" class="hidden max-w-md mx-auto mt-6 p-4">
     <div class="bg-white rounded-2xl shadow-xl border-2 border-orange-200 overflow-hidden">
       <div class="bg-mp-maroon text-white p-5 text-center border-b-4 border-mp-orange">
         <div class="w-12 h-12 bg-white text-mp-maroon font-black text-xl rounded-xl mx-auto flex items-center justify-center border-2 border-mp-orange mb-2">MP</div>
-        <h2 class="text-lg font-black uppercase">Mumbai Prints Exclusive Catalog</h2>
-        <p class="text-xs text-orange-200 mt-0.5">One-time registration • Direct wholesale access</p>
+        <h2 class="text-lg font-black uppercase">Customer Login & Registration</h2>
+        <p class="text-[11px] text-orange-200 mt-0.5">Enter your mobile number to access your account or create a new one</p>
       </div>
       <div class="p-5 space-y-4 text-xs">
-        <div>
-          <label class="block font-bold text-slate-700 uppercase mb-1">1. Your Shop / Customer Name *</label>
-          <input type="text" id="joinCustName" placeholder="XYZ Textile" class="w-full border-2 border-slate-200 rounded-lg p-2.5 text-sm focus:outline-none focus:border-mp-orange">
+        <div class="bg-orange-50 border border-orange-200 rounded-xl p-3 text-[11px] text-slate-700">
+          💡 <b>Existing Customer?</b> Just enter your <b>10-Digit Mobile Number</b> below—your saved account, chats, and orders will open automatically!<br>
+          🆕 <b>New Customer?</b> Fill in your Shop Name, Mobile Number, and City to create a new account.
         </div>
         <div>
-          <label class="block font-bold text-slate-700 uppercase mb-1">2. Mobile Number (10 Digits) *</label>
-          <input type="tel" id="joinCustPhone" placeholder="8893173438" class="w-full border-2 border-slate-200 rounded-lg p-2.5 text-sm focus:outline-none focus:border-mp-orange">
+          <label class="block font-bold text-slate-700 uppercase mb-1">1. Mobile Number (10 Digits) *</label>
+          <input type="tel" id="joinCustPhone" oninput="checkExistingPhoneOnType(this.value)" placeholder="Enter 10-digit mobile number" class="w-full border-2 border-slate-300 rounded-lg p-2.5 text-sm font-bold focus:outline-none focus:border-mp-orange">
+          <p id="phoneLookupHint" class="text-[11px] font-bold text-emerald-700 mt-1 hidden"></p>
+        </div>
+        <div>
+          <label class="block font-bold text-slate-700 uppercase mb-1">2. Your Shop / Customer Name *</label>
+          <input type="text" id="joinCustName" placeholder="XYZ Textile" class="w-full border-2 border-slate-200 rounded-lg p-2.5 text-sm focus:outline-none focus:border-mp-orange">
         </div>
         <div>
           <label class="block font-bold text-slate-700 uppercase mb-1">3. Your Place / City *</label>
@@ -70,36 +76,49 @@
           <input type="text" id="joinCustPlaceCustom" placeholder="Enter your city name" class="hidden mt-2 w-full border-2 border-orange-300 rounded-lg p-2.5 text-sm">
         </div>
         <button id="joinNowBtn" onclick="submitCustomerJoinNow()" class="w-full bg-mp-maroon hover:bg-mp-maroon-dark text-white font-black py-3.5 rounded-xl shadow-md text-sm uppercase tracking-wider">
-          Join Now →
+          Login / Join Catalog →
         </button>
       </div>
     </div>
   </section>
 
   <!-- CUSTOMER MAIN VIEW -->
-  <main id="customerMainWorkspace" class="hidden max-w-xl mx-auto p-3.5"></main>
+  <main id="customerMainWorkspace" class="hidden max-w-xl mx-auto p-3"></main>
 
-  <!-- WHATSAPP-STYLE 4 BOTTOM NAVIGATION TABS -->
+  <!-- SYSTEMATIC 5-TAB BOTTOM NAVIGATION BAR -->
   <nav id="customerBottomNav" class="hidden fixed bottom-0 left-0 right-0 bg-white border-t-2 border-orange-200 shadow-2xl z-40">
-    <div class="max-w-md mx-auto grid grid-cols-4 gap-1 p-1.5 text-center">
-      <button onclick="switchCustomerTab('chat')" id="custNav_chat" class="py-2 px-1 rounded-xl flex flex-col items-center justify-center bg-orange-100 text-mp-maroon font-black text-[11px]">
-        <span class="text-lg leading-none mb-0.5">💬</span>
+    <div class="max-w-md mx-auto grid grid-cols-5 gap-1 p-1.5 text-center">
+      <button onclick="switchCustomerTab('folders')" id="custNav_folders" class="py-2 px-1 rounded-xl flex flex-col items-center justify-center bg-orange-100 text-mp-maroon font-black text-[10px]">
+        <span class="text-base leading-none mb-0.5">📂</span>
+        <span>Catalog</span>
+      </button>
+      <button onclick="switchCustomerTab('chat')" id="custNav_chat" class="py-2 px-1 rounded-xl flex flex-col items-center justify-center text-slate-500 font-bold text-[10px]">
+        <span class="text-base leading-none mb-0.5">💬</span>
         <span>Chat</span>
       </button>
-      <button onclick="switchCustomerTab('folders')" id="custNav_folders" class="py-2 px-1 rounded-xl flex flex-col items-center justify-center text-slate-500 font-bold text-[11px]">
-        <span class="text-lg leading-none mb-0.5">📂</span>
-        <span>Folders</span>
+      <button onclick="switchCustomerTab('orders')" id="custNav_orders" class="py-2 px-1 rounded-xl flex flex-col items-center justify-center text-slate-500 font-bold text-[10px]">
+        <span class="text-base leading-none mb-0.5">📦</span>
+        <span>My Orders</span>
       </button>
-      <button onclick="switchCustomerTab('favorites')" id="custNav_favorites" class="py-2 px-1 rounded-xl flex flex-col items-center justify-center text-slate-500 font-bold text-[11px]">
-        <span class="text-lg leading-none mb-0.5">❤️</span>
-        <span>Favorite Items</span>
+      <button onclick="switchCustomerTab('favorites')" id="custNav_favorites" class="py-2 px-1 rounded-xl flex flex-col items-center justify-center text-slate-500 font-bold text-[10px]">
+        <span class="text-base leading-none mb-0.5">❤️</span>
+        <span>Saved</span>
       </button>
-      <button onclick="switchCustomerTab('about')" id="custNav_about" class="py-2 px-1 rounded-xl flex flex-col items-center justify-center text-slate-500 font-bold text-[11px]">
-        <span class="text-lg leading-none mb-0.5">ℹ️</span>
-        <span>About Us</span>
+      <button onclick="switchCustomerTab('about')" id="custNav_about" class="py-2 px-1 rounded-xl flex flex-col items-center justify-center text-slate-500 font-bold text-[10px]">
+        <span class="text-base leading-none mb-0.5">ℹ️</span>
+        <span>Profile</span>
       </button>
     </div>
   </nav>
+
+  <!-- HIDDEN CHAT PHOTO INPUT FOR CUSTOMER -->
+  <input type="file" id="custChatPhotoInput" accept="image/*" class="hidden" onchange="sendCustChatPhoto(this)">
+
+  <!-- FULLSCREEN IMAGE VIEWER MODAL -->
+  <div id="fullImgModal" onclick="this.classList.add('hidden')" class="hidden fixed inset-0 bg-black/85 z-[99999] flex flex-col items-center justify-center p-4 cursor-zoom-out">
+    <img id="fullImgTarget" src="" class="max-w-full max-h-[85vh] rounded-xl shadow-2xl border-2 border-white object-contain">
+    <span class="mt-3 text-white text-xs bg-black/60 px-4 py-1.5 rounded-full">Tap anywhere to close</span>
+  </div>
 
   <script>
     const FB_URL = "https://mumbai-prints-default-rtdb.firebaseio.com/mp_cloud_db_2026.json";
@@ -136,14 +155,19 @@
 
     let db = JSON.parse(localStorage.getItem(STORAGE_KEY)) || defaultDB;
     let currentCustomer = JSON.parse(localStorage.getItem(CUST_SESSION_KEY)) || null;
-    let activeCustTab = 'chat';
+    let activeCustTab = 'folders';
     let selectedCustFolder = (db.folders && db.folders[0]) || 'Ajrakh Print';
 
     let cloudReady = false;
     let isSyncing = false;
     let lastCloudString = "";
 
-    // Canonical Buyer ID based on 10-digit phone number
+    function openFullImage(src) {
+      if (!src) return;
+      document.getElementById('fullImgTarget').src = src;
+      document.getElementById('fullImgModal').classList.remove('hidden');
+    }
+
     function getCanonicalBuyerId(phone) {
       const clean = String(phone || '').replace(/\D/g, '').slice(-10);
       return clean.length === 10 ? ('b_' + clean) : ('b_' + Date.now());
@@ -173,7 +197,7 @@
       const idMap = {};
       const newBuyers = {};
       Object.values(targetDB.buyers).forEach(b => {
-        if (!b || !b.phone) return;
+        if (!b || !b.phone || b.deleted) return;
         const cleanPhone = String(b.phone).replace(/\D/g, '').slice(-10);
         if (cleanPhone.length !== 10) return;
         const canonId = 'b_' + cleanPhone;
@@ -189,20 +213,28 @@
         if (!newChats[canonId]) newChats[canonId] = [];
         const seen = new Set(newChats[canonId].map(m => m.msgId || (m.sender + '|' + m.text + '|' + m.time)));
         list.forEach((m, idx) => {
+          if (!m || m.deleted) return;
           if (!m.msgId) m.msgId = 'm_' + (m.ts || idx) + '_' + String(m.text).slice(0, 10);
-          const key = m.msgId || (m.sender + '|' + m.text + '|' + m.time);
+          const key = m.msgId;
           if (!seen.has(key)) {
             seen.add(key);
             newChats[canonId].push(m);
           }
         });
+        newChats[canonId].sort((a, b) => (a.ts || 0) - (b.ts || 0));
       });
       targetDB.chats = newChats;
 
-      targetDB.orders.forEach(o => {
+      targetDB.orders = (targetDB.orders || []).filter(o => o && !o.deleted);
+      targetDB.orders.forEach((o, idx) => {
         if (o.buyerId && idMap[o.buyerId]) o.buyerId = idMap[o.buyerId];
         else if (o.buyerPhone) o.buyerId = getCanonicalBuyerId(o.buyerPhone);
+        if (!o.ts) {
+          const parsedNum = Number(String(o.id).replace(/\D/g, '').slice(0, 13));
+          o.ts = parsedNum > 1600000000000 ? parsedNum : (1700000000000 + idx);
+        }
       });
+      targetDB.orders.sort((a, b) => (b.ts || 0) - (a.ts || 0));
 
       Object.keys(targetDB.categories).forEach(k => {
         targetDB.categories[k].buyerIds = [];
@@ -226,11 +258,14 @@
       merged.folders = Array.from(new Set([...(c.folders || []), ...(l.folders || [])]));
       merged.categories = Object.assign({}, l.categories, c.categories);
 
-      merged.buyers = Object.assign({}, l.buyers, c.buyers);
-      Object.keys(l.buyers || {}).forEach(id => {
-        if (c.buyers && c.buyers[id]) {
-          merged.buyers[id] = Object.assign({}, c.buyers[id], l.buyers[id]);
-          if (c.buyers[id].nickname && !l.buyers[id].nickname) merged.buyers[id].nickname = c.buyers[id].nickname;
+      merged.buyers = Object.assign({}, c.buyers, l.buyers);
+      Object.keys(c.buyers || {}).forEach(id => {
+        if (l.buyers && l.buyers[id]) {
+          const lTime = l.buyers[id].updatedAt || 0;
+          const cTime = c.buyers[id].updatedAt || 0;
+          merged.buyers[id] = cTime > lTime
+            ? Object.assign({}, l.buyers[id], c.buyers[id])
+            : Object.assign({}, c.buyers[id], l.buyers[id]);
         }
       });
 
@@ -239,7 +274,8 @@
       allChatBuyerIds.forEach(bId => {
         const combined = [...(c.chats?.[bId] || []), ...(l.chats?.[bId] || [])];
         const uniqueMap = new Map();
-        combined.forEach((m, idx) => {
+        combined.forEach(m => {
+          if (!m || m.deleted) return;
           const key = m.msgId || `${m.from}_${m.sender}_${m.text}_${m.time}`;
           if (!uniqueMap.has(key)) uniqueMap.set(key, m);
         });
@@ -250,7 +286,12 @@
 
       const orderMap = new Map();
       [...(c.orders || []), ...(l.orders || [])].forEach(o => {
-        if (o && o.id) orderMap.set(String(o.id), o);
+        if (o && o.id && !o.deleted) {
+          const ex = orderMap.get(String(o.id));
+          if (!ex || (o.updatedAt || 0) >= (ex.updatedAt || 0)) {
+            orderMap.set(String(o.id), o);
+          }
+        }
       });
       merged.orders = Array.from(orderMap.values()).sort((a, b) => (b.ts || 0) - (a.ts || 0));
 
@@ -271,7 +312,7 @@
       const b = document.getElementById('custCloudBadge');
       if (b) {
         b.innerText = text;
-        b.className = `text-[10px] ${bg} text-white font-bold px-2 py-0.5 rounded-full`;
+        b.className = `text-[9px] ${bg} text-white font-bold px-2 py-0.5 rounded-full`;
       }
     }
 
@@ -284,7 +325,7 @@
     async function pushToCloudSafe() {
       if (isSyncing) return;
       isSyncing = true;
-      setCustSyncBadge('⬆️ Sending...', 'bg-amber-600');
+      setCustSyncBadge('⚡ Sending...', 'bg-amber-600');
       try {
         const res = await fetch(FB_URL + "?t=" + Date.now(), { cache: "no-store" });
         if (res.ok) {
@@ -303,14 +344,14 @@
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ [STORAGE_KEY]: finalStr, updatedAt: Date.now() })
         });
-        setCustSyncBadge('🟢 Online', 'bg-emerald-700');
+        setCustSyncBadge('⚡ Live', 'bg-emerald-700');
       } catch (e) {
         setCustSyncBadge('⚠️ Offline', 'bg-red-700');
       }
       isSyncing = false;
     }
 
-    async function forceCloudPull() {
+    async function forceCloudPull(forceRender) {
       if (isSyncing) return;
       isSyncing = true;
       try {
@@ -319,7 +360,7 @@
           const cloudWrapper = await res.json();
           if (cloudWrapper && cloudWrapper[STORAGE_KEY]) {
             const cloudStr = cloudWrapper[STORAGE_KEY];
-            if (cloudStr !== lastCloudString || !cloudReady) {
+            if (cloudStr !== lastCloudString || !cloudReady || forceRender) {
               const oldDB = JSON.parse(JSON.stringify(db));
               const cloudDB = JSON.parse(cloudStr);
               db = mergeDatabases(db, cloudDB);
@@ -342,16 +383,22 @@
 
               lastCloudString = mergedStr;
 
-              const activeEl = document.activeElement;
-              const isTyping = activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA' || activeEl.tagName === 'SELECT');
-              if (!isTyping && currentCustomer) {
-                renderCustomerTab();
+              // If user is on chat tab, update chat box smoothly without losing input focus!
+              const cb = document.getElementById('custChatBox');
+              if (activeCustTab === 'chat' && cb && currentCustomer && !forceRender) {
+                renderCustomerChatMessagesOnly();
+              } else {
+                const activeEl = document.activeElement;
+                const isTyping = activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA' || activeEl.tagName === 'SELECT');
+                if ((!isTyping || forceRender) && currentCustomer) {
+                  renderCustomerTab();
+                }
               }
             }
           }
         }
         cloudReady = true;
-        setCustSyncBadge('🟢 Online', 'bg-emerald-700');
+        setCustSyncBadge('⚡ Live', 'bg-emerald-700');
       } catch (e) {
         cloudReady = true;
         setCustSyncBadge('⚠️ Retry', 'bg-red-700');
@@ -414,8 +461,56 @@
       document.getElementById('joinCustPlaceCustom').classList.toggle('hidden', sel !== 'OTHER_CUSTOM');
     }
 
+    // Live Phone Number Lookup: If customer types an existing 10-digit number, auto-fill their saved name & place!
+    function checkExistingPhoneOnType(val) {
+      const clean = String(val || '').replace(/\D/g, '').slice(-10);
+      const hint = document.getElementById('phoneLookupHint');
+      if (clean.length === 10) {
+        const canonId = getCanonicalBuyerId(clean);
+        const existing = db.buyers && db.buyers[canonId];
+        if (existing) {
+          document.getElementById('joinCustName').value = existing.name || '';
+          const mainPlaces = ['Ernakulam', 'Tamil Nadu', 'Kottayam', 'Alappuzha'];
+          const match = mainPlaces.find(p => p.toLowerCase() === (existing.place || '').toLowerCase());
+          if (match) {
+            document.getElementById('joinCustPlaceSelect').value = match;
+            document.getElementById('joinCustPlaceCustom').classList.add('hidden');
+          } else if (existing.place) {
+            document.getElementById('joinCustPlaceSelect').value = 'OTHER_CUSTOM';
+            document.getElementById('joinCustPlaceCustom').classList.remove('hidden');
+            document.getElementById('joinCustPlaceCustom').value = existing.place;
+          }
+          if (hint) {
+            hint.innerText = `✅ Welcome back, ${existing.name}! Tap Login below to open your account.`;
+            hint.classList.remove('hidden');
+          }
+          return;
+        }
+      }
+      if (hint) hint.classList.add('hidden');
+    }
+
+    // Customer Logout / Switch Account Function
+    function customerLogout() {
+      if (!confirm('Do you want to log out or switch to another mobile number?')) return;
+      localStorage.removeItem(CUST_SESSION_KEY);
+      currentCustomer = null;
+      // Clear URL parameters so invite auto-login doesn't force-login the old number
+      if (window.history && window.history.replaceState) {
+        window.history.replaceState({}, document.title, window.location.pathname);
+      }
+      document.getElementById('joinCustPhone').value = '';
+      document.getElementById('joinCustName').value = '';
+      document.getElementById('phoneLookupHint').classList.add('hidden');
+      document.getElementById('custLogoutBtn').classList.add('hidden');
+      document.getElementById('custHeaderUserSub').innerText = 'QSP is our USP';
+      document.getElementById('customerJoinSection').classList.remove('hidden');
+      document.getElementById('customerMainWorkspace').classList.add('hidden');
+      document.getElementById('customerBottomNav').classList.add('hidden');
+    }
+
     async function initCustomerApp() {
-      await forceCloudPull();
+      await forceCloudPull(true);
 
       const params = new URLSearchParams(window.location.search);
       const urlName = (params.get('name') || '').trim();
@@ -436,7 +531,6 @@
         }
       }
 
-      // Auto-register & auto-login if URL has a valid 10-digit phone number!
       if (urlPhone.length === 10) {
         const canonId = getCanonicalBuyerId(urlPhone);
         const existing = db.buyers[canonId];
@@ -451,7 +545,8 @@
           place: finalPlace,
           nickname: (existing && existing.nickname) || '',
           catKey: catK,
-          isFav: (existing && existing.isFav) || false
+          isFav: (existing && existing.isFav) || false,
+          updatedAt: Date.now()
         };
         if (!db.chats[canonId] || db.chats[canonId].length === 0) {
           db.chats[canonId] = [{
@@ -468,7 +563,6 @@
         await saveDB();
       }
 
-      // Ensure existing session uses canonical phone ID
       if (currentCustomer && currentCustomer.phone) {
         const cleanPhone = String(currentCustomer.phone).replace(/\D/g, '').slice(-10);
         const canonId = getCanonicalBuyerId(cleanPhone);
@@ -486,35 +580,49 @@
         document.getElementById('customerJoinSection').classList.add('hidden');
         document.getElementById('customerMainWorkspace').classList.remove('hidden');
         document.getElementById('customerBottomNav').classList.remove('hidden');
-        renderCustomerTab();
+        document.getElementById('custLogoutBtn').classList.remove('hidden');
+        document.getElementById('custHeaderUserSub').innerText = `👤 ${currentCustomer.name} (${currentCustomer.phone})`;
+        switchCustomerTab(activeCustTab);
       } else {
         document.getElementById('customerJoinSection').classList.remove('hidden');
         document.getElementById('customerMainWorkspace').classList.add('hidden');
         document.getElementById('customerBottomNav').classList.add('hidden');
+        document.getElementById('custLogoutBtn').classList.add('hidden');
       }
     }
 
     async function submitCustomerJoinNow() {
-      const name = document.getElementById('joinCustName').value.trim();
       const rawPhone = document.getElementById('joinCustPhone').value.trim();
       const phone = rawPhone.replace(/\D/g, '').slice(-10);
+      let name = document.getElementById('joinCustName').value.trim();
       const selPlace = document.getElementById('joinCustPlaceSelect').value;
-      const place = (selPlace === 'OTHER_CUSTOM')
+      let place = (selPlace === 'OTHER_CUSTOM')
         ? document.getElementById('joinCustPlaceCustom').value.trim()
         : selPlace;
 
-      if (!name || phone.length !== 10 || !place) {
-        alert('Please enter your Shop Name, valid 10-Digit Mobile Number, and Place.');
+      if (phone.length !== 10) {
+        alert('Please enter a valid 10-Digit Mobile Number.');
         return;
       }
 
       const btn = document.getElementById('joinNowBtn');
-      if (btn) { btn.innerText = 'Joining & Syncing...'; btn.disabled = true; }
+      if (btn) { btn.innerText = 'Connecting...'; btn.disabled = true; }
 
-      await forceCloudPull();
+      await forceCloudPull(true);
 
       const canonId = getCanonicalBuyerId(phone);
       const existing = db.buyers[canonId];
+
+      // If same number already exists, open same account (even if name wasn't re-typed)
+      if (existing) {
+        name = name || existing.name;
+        place = place || existing.place || 'Ernakulam';
+      } else if (!name || !place) {
+        if (btn) { btn.innerText = 'Login / Join Catalog →'; btn.disabled = false; }
+        alert('New mobile number detected! Please enter your Shop Name and Place to create your account.');
+        return;
+      }
+
       const matchedCatKey = (existing && existing.catKey) || matchPlaceToCategoryInDB(place, db);
 
       db.buyers[canonId] = {
@@ -524,7 +632,8 @@
         place: place,
         nickname: (existing && existing.nickname) || '',
         catKey: matchedCatKey,
-        isFav: (existing && existing.isFav) || false
+        isFav: (existing && existing.isFav) || false,
+        updatedAt: Date.now()
       };
 
       if (!db.chats[canonId] || db.chats[canonId].length === 0) {
@@ -542,24 +651,54 @@
       localStorage.setItem(CUST_SESSION_KEY, JSON.stringify(currentCustomer));
       await saveDB();
 
-      if (btn) { btn.innerText = 'Join Now →'; btn.disabled = false; }
+      if (btn) { btn.innerText = 'Login / Join Catalog →'; btn.disabled = false; }
 
       document.getElementById('customerJoinSection').classList.add('hidden');
       document.getElementById('customerMainWorkspace').classList.remove('hidden');
       document.getElementById('customerBottomNav').classList.remove('hidden');
-      renderCustomerTab();
+      document.getElementById('custLogoutBtn').classList.remove('hidden');
+      document.getElementById('custHeaderUserSub').innerText = `👤 ${currentCustomer.name} (${currentCustomer.phone})`;
+      switchCustomerTab('folders');
     }
 
     function switchCustomerTab(tab) {
       activeCustTab = tab;
-      ['chat', 'folders', 'favorites', 'about'].forEach(t => {
+      ['folders', 'chat', 'orders', 'favorites', 'about'].forEach(t => {
         const btn = document.getElementById('custNav_' + t);
         if (!btn) return;
         btn.className = (t === tab)
-          ? 'py-2 px-1 rounded-xl flex flex-col items-center justify-center bg-orange-100 text-mp-maroon font-black text-[11px]'
-          : 'py-2 px-1 rounded-xl flex flex-col items-center justify-center text-slate-500 font-bold text-[11px]';
+          ? 'py-2 px-1 rounded-xl flex flex-col items-center justify-center bg-orange-100 text-mp-maroon font-black text-[10px]'
+          : 'py-2 px-1 rounded-xl flex flex-col items-center justify-center text-slate-500 font-bold text-[10px]';
       });
       renderCustomerTab();
+    }
+
+    function buildCustomerChatMessagesHtml(custId) {
+      const msgs = (db.chats && db.chats[custId]) || [];
+      return msgs.filter(m => !m.deleted).map(m => {
+        const isMe = m.from === 'cust';
+        const imgSrc = m.chatImg || m.productImg || '';
+        return `
+          <div class="flex flex-col ${isMe ? 'items-end' : 'items-start'}">
+            <div class="max-w-[82%] rounded-xl p-2.5 shadow-sm border ${isMe ? 'bg-[#ffeedd] border-orange-200 text-mp-maroon' : 'bg-white border-slate-200 text-slate-900'}">
+              <div class="text-[10px] font-bold opacity-75">${m.sender} • ${m.time || ''}</div>
+              ${imgSrc ? `<img src="${imgSrc}" onclick="openFullImage('${imgSrc}')" class="w-full max-h-48 object-cover rounded-lg mt-1.5 border cursor-zoom-in">` : ''}
+              ${m.productTitle ? `<div class="text-[11px] font-bold mt-1 text-mp-orange">${m.productTitle}</div>` : ''}
+              ${m.text ? `<div class="text-xs mt-1 font-medium whitespace-pre-line">${m.text}</div>` : ''}
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function renderCustomerChatMessagesOnly() {
+      if (!currentCustomer) return;
+      const custId = getCanonicalBuyerId(currentCustomer.phone);
+      const cb = document.getElementById('custChatBox');
+      if (cb) {
+        cb.innerHTML = buildCustomerChatMessagesHtml(custId);
+        cb.scrollTop = cb.scrollHeight;
+      }
     }
 
     function renderCustomerTab() {
@@ -571,52 +710,27 @@
       currentCustomer.id = custId;
       const b = db.buyers[custId] || currentCustomer;
 
+      document.getElementById('custHeaderUserSub').innerText = `👤 ${b.name} (${b.phone})`;
+
       if (!db.folders.includes(selectedCustFolder)) {
         selectedCustFolder = db.folders[0] || 'Ajrakh Print';
       }
 
-      if (activeCustTab === 'chat') {
-        const msgs = (db.chats && db.chats[custId]) || [];
-        let msgHtml = msgs.map(m => {
-          const isMe = m.from === 'cust';
+      // TAB 1: SYSTEMATIC CATALOG FOLDERS & DESIGNS
+      if (activeCustTab === 'folders') {
+        const myCat = b.catKey || 'cat1';
+        let folderButtons = (db.folders || []).map(f => {
+          const count = (db.designs || []).filter(d => d.folder === f && (d.targetCat === 'all' || d.targetCat === myCat)).length;
           return `
-            <div class="flex flex-col ${isMe ? 'items-end' : 'items-start'}">
-              <div class="max-w-[82%] rounded-xl p-2.5 shadow-sm border ${isMe ? 'bg-[#ffeedd] border-orange-200 text-mp-maroon' : 'bg-white border-slate-200 text-slate-900'}">
-                <div class="text-[10px] font-bold opacity-75">${m.sender} • ${m.time || ''}</div>
-                ${m.productImg ? `<img src="${m.productImg}" class="w-full h-36 object-cover rounded mt-1.5 border"><div class="text-[11px] font-bold mt-1">${m.productTitle || ''}</div>` : ''}
-                <div class="text-xs mt-1 font-medium">${m.text}</div>
-              </div>
-            </div>
+            <button onclick="selectedCustFolder='${f}'; renderCustomerTab();" class="px-3.5 py-2 rounded-xl text-xs font-bold shrink-0 transition flex items-center gap-1.5 ${
+              selectedCustFolder === f ? 'bg-mp-maroon text-white shadow-md' : 'bg-white border border-orange-200 text-mp-maroon'
+            }">
+              <span>📁 ${f}</span>
+              <span class="text-[10px] px-1.5 py-0.2 rounded-full ${selectedCustFolder === f ? 'bg-mp-orange text-white' : 'bg-orange-100 text-mp-maroon'}">${count}</span>
+            </button>
           `;
         }).join('');
 
-        box.innerHTML = `
-          <div class="bg-white rounded-2xl shadow-md border border-slate-200 overflow-hidden flex flex-col h-[74vh]">
-            <div class="bg-mp-maroon text-white p-3 flex justify-between items-center border-b-2 border-mp-orange">
-              <div>
-                <h2 class="font-bold text-sm">💬 Mumbai Prints Official Support</h2>
-                <p class="text-[10px] text-orange-200">Logged in as: ${b.name} (${b.phone})</p>
-              </div>
-              <button onclick="switchCustomerTab('folders')" class="bg-mp-orange text-white text-[11px] font-bold px-2.5 py-1 rounded-lg">📂 View Fabrics</button>
-            </div>
-            <div id="custChatBox" class="flex-1 p-3 overflow-y-auto space-y-2.5 bg-[#f7f1ee] text-xs">${msgHtml}</div>
-            <div class="p-2.5 bg-white border-t flex gap-2">
-              <input type="text" id="custChatInput" onkeydown="if(event.key==='Enter') sendCustChatMessage()" placeholder="Type a message to Mumbai Prints..." class="flex-1 border-2 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-mp-orange">
-              <button onclick="sendCustChatMessage()" class="bg-mp-maroon text-white font-bold px-4 py-2 rounded-xl text-xs">Send</button>
-            </div>
-          </div>
-        `;
-        const cb = document.getElementById('custChatBox');
-        if (cb) cb.scrollTop = cb.scrollHeight;
-      }
-      else if (activeCustTab === 'folders') {
-        let folderButtons = (db.folders || []).map(f => `
-          <button onclick="selectedCustFolder='${f}'; renderCustomerTab();" class="px-3.5 py-2 rounded-xl text-xs font-bold shrink-0 transition ${
-            selectedCustFolder === f ? 'bg-mp-maroon text-white shadow' : 'bg-white border border-orange-200 text-mp-maroon'
-          }">📁 ${f}</button>
-        `).join('');
-
-        const myCat = b.catKey || 'cat1';
         const visibleDesigns = (db.designs || []).filter(d =>
           d.folder === selectedCustFolder && (d.targetCat === 'all' || d.targetCat === myCat)
         );
@@ -628,9 +742,10 @@
               return `
                 <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
                   <div class="relative">
-                    <img src="${d.img}" class="w-full h-56 object-cover bg-slate-100">
-                    <button onclick="toggleCustFavoriteDesign(${d.id})" class="absolute top-3 right-3 bg-white/90 hover:bg-white rounded-full px-3 py-1.5 shadow font-bold text-xs flex items-center gap-1">
-                      <span>${isFav ? '❤️ Saved' : '🤍 Favorite'}</span>
+                    <img src="${d.img}" onclick="openFullImage('${d.img}')" class="w-full h-60 object-cover bg-slate-100 cursor-zoom-in">
+                    <span class="absolute top-3 left-3 bg-black/60 text-white text-[10px] font-bold px-2.5 py-1 rounded-full">🔍 Tap photo to zoom</span>
+                    <button onclick="toggleCustFavoriteDesign(${d.id})" class="absolute top-3 right-3 bg-white/95 hover:bg-white rounded-full px-3 py-1.5 shadow font-bold text-xs flex items-center gap-1">
+                      <span>${isFav ? '❤️ Saved' : '🤍 Save'}</span>
                     </button>
                   </div>
                   <div class="p-3.5 space-y-2.5">
@@ -639,8 +754,8 @@
                       <span class="text-[10px] text-slate-400 font-semibold">${d.dateGroup || ''}</span>
                     </div>
                     <div class="flex gap-2">
-                      <input type="text" id="qty_${d.id}" placeholder="Enter Qty (e.g. 20m / 4 sets)..." class="flex-1 border-2 border-slate-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-mp-orange">
-                      <button onclick="placeCustomerOrder(${d.id})" class="bg-mp-orange hover:bg-orange-600 text-white font-black px-4 py-2 rounded-xl text-xs uppercase shadow">
+                      <input type="text" id="qty_${d.id}" onkeydown="if(event.key==='Enter') placeCustomerOrder(${d.id})" placeholder="Enter Qty (e.g. 20m / 4 sets)..." class="flex-1 border-2 border-slate-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-mp-orange">
+                      <button onclick="placeCustomerOrder(${d.id})" class="bg-mp-orange hover:bg-orange-600 text-white font-black px-4 py-2 rounded-xl text-xs uppercase shadow shrink-0">
                         Order Now
                       </button>
                     </div>
@@ -652,20 +767,95 @@
         box.innerHTML = `
           <div class="space-y-3.5">
             <div class="bg-[#fcedea] p-3 rounded-2xl border border-orange-200">
-              <h2 class="font-black text-mp-maroon text-xs uppercase mb-2">📂 Select Fabric Folder:</h2>
+              <div class="flex justify-between items-center mb-2">
+                <h2 class="font-black text-mp-maroon text-xs uppercase">📂 Select Fabric Category:</h2>
+                <span class="text-[10px] font-bold text-mp-orange">${visibleDesigns.length} Designs Available</span>
+              </div>
               <div class="flex gap-2 overflow-x-auto pb-1">${folderButtons}</div>
             </div>
             <div class="space-y-4">${cardsHtml}</div>
           </div>
         `;
       }
+
+      // TAB 2: DIRECT 1-ON-1 CHAT WITH PHOTO UPLOAD
+      else if (activeCustTab === 'chat') {
+        const msgHtml = buildCustomerChatMessagesHtml(custId);
+
+        box.innerHTML = `
+          <div class="bg-white rounded-2xl shadow-md border border-slate-200 overflow-hidden flex flex-col h-[74vh]">
+            <div class="bg-mp-maroon text-white p-3 flex justify-between items-center border-b-2 border-mp-orange">
+              <div>
+                <h2 class="font-bold text-sm">💬 Mumbai Prints Official Support</h2>
+                <p class="text-[10px] text-orange-200">Account: ${b.name} (${b.phone})</p>
+              </div>
+              <button onclick="switchCustomerTab('folders')" class="bg-mp-orange text-white text-[11px] font-bold px-2.5 py-1 rounded-lg">📂 Catalog</button>
+            </div>
+            <div id="custChatBox" class="flex-1 p-3 overflow-y-auto space-y-2.5 bg-[#f7f1ee] text-xs">${msgHtml}</div>
+            <div class="p-2.5 bg-white border-t flex items-center gap-2">
+              <button onclick="document.getElementById('custChatPhotoInput').click()" title="Upload Photo" class="bg-orange-100 hover:bg-orange-200 text-mp-maroon border border-orange-300 font-bold px-3 py-2 rounded-xl text-sm shrink-0">
+                📷
+              </button>
+              <input type="text" id="custChatInput" onkeydown="if(event.key==='Enter') sendCustChatMessage()" placeholder="Type message or tap 📷 to send photo..." class="flex-1 border-2 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-mp-orange">
+              <button onclick="sendCustChatMessage()" class="bg-mp-maroon text-white font-bold px-4 py-2 rounded-xl text-xs shrink-0">Send</button>
+            </div>
+          </div>
+        `;
+        const cb = document.getElementById('custChatBox');
+        if (cb) cb.scrollTop = cb.scrollHeight;
+      }
+
+      // TAB 3: MY ORDERS (CHRONOLOGICAL - LATEST FIRST)
+      else if (activeCustTab === 'orders') {
+        const myOrders = (db.orders || [])
+          .filter(o => o.buyerId === custId || String(o.buyerPhone || '').slice(-10) === b.phone)
+          .sort((a, b) => (b.ts || 0) - (a.ts || 0));
+
+        let ordHtml = myOrders.length === 0
+          ? `<div class="bg-white rounded-2xl border p-10 text-center text-xs text-slate-400">📦 You haven't placed any orders yet.<br>Go to the <b>Catalog</b> tab to browse designs and place an order!</div>`
+          : myOrders.map((o, idx) => {
+              const status = o.status || 'Pending';
+              const badgeStyle = status === 'Dispatched' ? 'bg-green-100 text-green-800 border-green-300'
+                               : status === 'Confirmed' ? 'bg-blue-100 text-blue-800 border-blue-300'
+                               : 'bg-amber-100 text-amber-900 border-amber-300';
+              return `
+                <div class="bg-white p-3.5 rounded-2xl shadow-sm border border-orange-200 flex gap-3 items-center">
+                  <img src="${o.img}" onclick="openFullImage('${o.img}')" class="w-16 h-16 object-cover rounded-xl border shrink-0 cursor-zoom-in">
+                  <div class="flex-1 min-w-0">
+                    <div class="flex justify-between items-center mb-1">
+                      <span class="text-[10px] font-black bg-mp-maroon text-white px-2 py-0.5 rounded">Order #${myOrders.length - idx}</span>
+                      <span class="text-[10px] font-bold px-2 py-0.5 rounded border ${badgeStyle}">${status}</span>
+                    </div>
+                    <div class="font-bold text-xs text-slate-900 truncate">👕 ${o.designTitle}</div>
+                    <div class="text-xs font-black text-mp-orange mt-0.5">📦 Qty: ${o.qty}</div>
+                    <div class="text-[10px] text-slate-400 mt-0.5">🕒 ${o.time || ''}</div>
+                  </div>
+                </div>
+              `;
+            }).join('');
+
+        box.innerHTML = `
+          <div class="space-y-3">
+            <div class="bg-white p-3.5 rounded-2xl border border-orange-200 flex justify-between items-center">
+              <div>
+                <h2 class="font-black text-mp-maroon text-sm uppercase">📦 My Orders History</h2>
+                <p class="text-[10px] text-slate-500">Latest orders appear on top</p>
+              </div>
+              <span class="bg-orange-100 text-mp-maroon text-xs font-bold px-2.5 py-1 rounded-full">${myOrders.length} Orders</span>
+            </div>
+            <div class="space-y-3">${ordHtml}</div>
+          </div>
+        `;
+      }
+
+      // TAB 4: SAVED FAVORITE ITEMS
       else if (activeCustTab === 'favorites') {
         const favDesigns = (db.designs || []).filter(d => d.favBy && d.favBy[custId]);
         let favHtml = favDesigns.length === 0
-          ? `<div class="bg-white rounded-2xl border p-10 text-center text-xs text-slate-400">❤️ You haven't added any designs to Favorite Items yet.<br>Tap the 🤍 Favorite button on any design in Folders to save it here!</div>`
+          ? `<div class="bg-white rounded-2xl border p-10 text-center text-xs text-slate-400">❤️ You haven't saved any designs yet.<br>Tap the 🤍 Save button on any design in Catalog to bookmark it here!</div>`
           : favDesigns.map(d => `
               <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-                <img src="${d.img}" class="w-full h-52 object-cover">
+                <img src="${d.img}" onclick="openFullImage('${d.img}')" class="w-full h-52 object-cover cursor-zoom-in">
                 <div class="p-3.5 space-y-2.5">
                   <div class="flex justify-between items-center">
                     <h4 class="font-black text-sm text-mp-maroon">${d.title}</h4>
@@ -682,53 +872,100 @@
         box.innerHTML = `
           <div class="space-y-3">
             <div class="bg-white p-3.5 rounded-2xl border border-orange-200 flex justify-between items-center">
-              <h2 class="font-black text-mp-maroon text-sm uppercase">❤️ Your Favorite Items</h2>
+              <h2 class="font-black text-mp-maroon text-sm uppercase">❤️ Saved Designs</h2>
               <span class="bg-orange-100 text-mp-maroon text-xs font-bold px-2.5 py-0.5 rounded-full">${favDesigns.length} Saved</span>
             </div>
             <div class="space-y-4">${favHtml}</div>
           </div>
         `;
       }
+
+      // TAB 5: CUSTOMER PROFILE, SWITCH ACCOUNT & ABOUT US
       else if (activeCustTab === 'about') {
         const a = db.aboutUs || defaultDB.aboutUs;
         box.innerHTML = `
-          <div class="bg-white rounded-2xl shadow-lg border-2 border-orange-200 overflow-hidden">
-            <div class="bg-mp-maroon text-white p-6 text-center border-b-4 border-mp-orange">
-              <div class="w-16 h-16 bg-white text-mp-maroon font-black text-2xl rounded-2xl mx-auto flex items-center justify-center border-2 border-mp-orange shadow mb-2">MP</div>
-              <h2 class="text-xl font-black uppercase tracking-wide">Mumbai Prints</h2>
-              <p class="text-xs text-orange-200 tracking-widest uppercase mt-1">QSP is our USP</p>
-            </div>
-            <div class="p-5 space-y-4 text-xs">
-              <div class="space-y-2.5 bg-slate-50 p-4 rounded-xl border border-slate-200">
-                <div class="flex items-center justify-between">
-                  <span class="font-bold text-slate-600">📞 Primary Phone:</span>
-                  <a href="tel:${a.phone1}" class="font-black text-mp-maroon text-sm underline">${a.phone1}</a>
+          <div class="space-y-4">
+            <!-- Customer Account Card -->
+            <div class="bg-white rounded-2xl shadow-sm border-2 border-orange-200 p-4 text-xs space-y-3">
+              <div class="flex justify-between items-center border-b pb-2">
+                <div>
+                  <span class="text-[10px] font-bold uppercase text-mp-orange">Logged In Customer Account</span>
+                  <h3 class="text-base font-black text-mp-maroon">${b.name}</h3>
                 </div>
-                ${a.phone2 && a.phone2 !== 'Add 2nd Number' ? `
-                <div class="flex items-center justify-between border-t pt-2">
-                  <span class="font-bold text-slate-600">📞 Secondary Phone:</span>
-                  <a href="tel:${a.phone2}" class="font-black text-mp-maroon text-sm underline">${a.phone2}</a>
-                </div>` : ''}
-                <div class="flex items-center justify-between border-t pt-2">
-                  <span class="font-bold text-slate-600">✉️ Official Email:</span>
-                  <a href="mailto:${a.email}" class="font-bold text-blue-700 underline">${a.email}</a>
+                <button onclick="customerLogout()" class="bg-red-600 hover:bg-red-700 text-white font-bold px-3 py-1.5 rounded-xl text-xs shadow">
+                  🚪 Logout / Switch Account
+                </button>
+              </div>
+              <div class="grid grid-cols-2 gap-2 bg-orange-50/60 p-3 rounded-xl border border-orange-100">
+                <div>
+                  <span class="text-[10px] text-slate-500 block">Registered Mobile:</span>
+                  <span class="font-bold text-slate-900">📞 ${b.phone}</span>
                 </div>
-                <div class="flex items-center justify-between border-t pt-2">
-                  <span class="font-bold text-slate-600">📸 Instagram:</span>
-                  <a href="${a.instagram || '#'}" target="_blank" class="bg-gradient-to-r from-pink-600 to-orange-500 text-white font-bold px-3 py-1 rounded-lg">Follow on Instagram</a>
+                <div>
+                  <span class="text-[10px] text-slate-500 block">City / Location:</span>
+                  <span class="font-bold text-slate-900">📍 ${b.place}</span>
                 </div>
               </div>
+            </div>
 
-              <div class="bg-[#fcedea] border-2 border-orange-200 rounded-2xl p-4 text-center space-y-1">
-                <div class="text-lg">🤝✨</div>
-                <p class="text-mp-maroon font-bold text-xs leading-relaxed italic">
-                  "${a.message}"
-                </p>
+            <!-- About Mumbai Prints Card -->
+            <div class="bg-white rounded-2xl shadow-lg border-2 border-orange-200 overflow-hidden">
+              <div class="bg-mp-maroon text-white p-5 text-center border-b-4 border-mp-orange">
+                <div class="w-14 h-14 bg-white text-mp-maroon font-black text-2xl rounded-2xl mx-auto flex items-center justify-center border-2 border-mp-orange shadow mb-2">MP</div>
+                <h2 class="text-lg font-black uppercase tracking-wide">Mumbai Prints</h2>
+                <p class="text-xs text-orange-200 tracking-widest uppercase mt-0.5">QSP is our USP</p>
+              </div>
+              <div class="p-5 space-y-4 text-xs">
+                <div class="space-y-2.5 bg-slate-50 p-4 rounded-xl border border-slate-200">
+                  <div class="flex items-center justify-between">
+                    <span class="font-bold text-slate-600">📞 Primary Phone:</span>
+                    <a href="tel:${a.phone1}" class="font-black text-mp-maroon text-sm underline">${a.phone1}</a>
+                  </div>
+                  ${a.phone2 && a.phone2 !== 'Add 2nd Number' ? `
+                  <div class="flex items-center justify-between border-t pt-2">
+                    <span class="font-bold text-slate-600">📞 Secondary Phone:</span>
+                    <a href="tel:${a.phone2}" class="font-black text-mp-maroon text-sm underline">${a.phone2}</a>
+                  </div>` : ''}
+                  <div class="flex items-center justify-between border-t pt-2">
+                    <span class="font-bold text-slate-600">✉️ Official Email:</span>
+                    <a href="mailto:${a.email}" class="font-bold text-blue-700 underline">${a.email}</a>
+                  </div>
+                  <div class="flex items-center justify-between border-t pt-2">
+                    <span class="font-bold text-slate-600">📸 Instagram:</span>
+                    <a href="${a.instagram || '#'}" target="_blank" class="bg-gradient-to-r from-pink-600 to-orange-500 text-white font-bold px-3 py-1 rounded-lg">Follow on Instagram</a>
+                  </div>
+                </div>
+
+                <div class="bg-[#fcedea] border-2 border-orange-200 rounded-2xl p-4 text-center space-y-1">
+                  <div class="text-lg">🤝✨</div>
+                  <p class="text-mp-maroon font-bold text-xs leading-relaxed italic">
+                    "${a.message}"
+                  </p>
+                </div>
               </div>
             </div>
           </div>
         `;
       }
+    }
+
+    function compressImageFile(file, maxW, callback) {
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const img = new Image();
+        img.onload = function() {
+          const canvas = document.createElement('canvas');
+          const scale = img.width > maxW ? (maxW / img.width) : 1;
+          canvas.width = img.width * scale;
+          canvas.height = img.height * scale;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+          callback(canvas.toDataURL('image/jpeg', 0.72));
+        };
+        img.onerror = function() { callback(e.target.result); };
+        img.src = e.target.result;
+      };
+      reader.readAsDataURL(file);
     }
 
     async function sendCustChatMessage() {
@@ -752,8 +989,36 @@
         ts: now
       });
       input.value = '';
-      renderCustomerTab();
+      renderCustomerChatMessagesOnly();
       await saveDB();
+    }
+
+    function sendCustChatPhoto(fileInput) {
+      const file = fileInput.files && fileInput.files[0];
+      if (!file || !currentCustomer) return;
+      const caption = prompt('Add a caption or note for this photo (optional):', '') || '';
+      compressImageFile(file, 650, async (compressedUrl) => {
+        const custId = getCanonicalBuyerId(currentCustomer.phone);
+        currentCustomer.id = custId;
+        const b = db.buyers[custId] || currentCustomer;
+        db.buyers[custId] = b;
+
+        if (!db.chats) db.chats = {};
+        if (!db.chats[custId]) db.chats[custId] = [];
+        const now = Date.now();
+        db.chats[custId].push({
+          msgId: 'm_img_' + now + '_' + Math.floor(Math.random() * 1000),
+          from: 'cust',
+          sender: b.name,
+          text: caption.trim() || '📷 Customer sent a photo',
+          chatImg: compressedUrl,
+          time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          ts: now
+        });
+        fileInput.value = '';
+        renderCustomerChatMessagesOnly();
+        await saveDB();
+      });
     }
 
     async function toggleCustFavoriteDesign(designId) {
@@ -808,11 +1073,13 @@
         designTitle: d.title,
         img: d.img,
         qty: qty,
+        status: 'Pending',
         time: `Today, ${nowStr}`,
-        ts: now
+        ts: now,
+        updatedAt: now
       });
 
-      switchCustomerTab('chat');
+      switchCustomerTab('orders');
       await saveDB();
       alert(`✅ Order for "${d.title}" (${qty}) sent to Mumbai Prints!`);
     }
@@ -821,8 +1088,9 @@
       alert('📲 Add Mumbai Prints to your Phone Home Screen:\n\n• On Android (Chrome): Tap the 3 dots (⋮) at top-right → Tap "Add to Home screen" or "Install app".\n• On iPhone (Safari): Tap the Share icon (⬆️) at bottom → Scroll down and tap "Add to Home Screen".\n\nIt will open like a full-screen native app without any browser bar!');
     }
 
+    // Fast 700ms Real-Time Sync Loop
     initCustomerApp();
-    setInterval(forceCloudPull, 2000);
+    setInterval(() => forceCloudPull(false), 700);
   </script>
 </body>
 </html>
