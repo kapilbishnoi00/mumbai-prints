@@ -54,12 +54,13 @@
           <div>
             <div class="flex items-center gap-2">
               <h1 class="text-lg font-black uppercase leading-none">Mumbai Prints</h1>
-              <span id="shopSyncBadge" class="text-[9px] bg-green-900/90 border border-green-400 text-green-200 px-2 py-0.5 rounded-full font-bold">🟢 Synced</span>
+              <span id="shopCloudBadge" class="text-[10px] bg-emerald-700 text-white font-bold px-2 py-0.5 rounded-full">🔄 Syncing...</span>
             </div>
             <p class="text-[10px] text-orange-200 uppercase tracking-widest mt-0.5">🏪 Shop Mode • QSP is our USP</p>
           </div>
         </div>
-        <div class="flex items-center gap-2">
+        <div class="flex items-center gap-1.5">
+          <button onclick="forceCloudPull()" class="bg-emerald-700 text-white text-[11px] font-bold px-2.5 py-1.5 rounded-lg">🔄 Sync</button>
           <button onclick="toggleStudioModal()" class="bg-mp-orange hover:bg-orange-600 text-white text-xs font-bold px-3 py-1.5 rounded-lg shadow">📤 Upload & Folders</button>
           <button onclick="shopLogout()" class="bg-mp-maroon-dark text-orange-200 text-xs font-bold px-2.5 py-1.5 rounded-lg border border-orange-800">Logout</button>
         </div>
@@ -105,7 +106,8 @@
 
       <div class="border-2 border-orange-200 rounded-xl p-3 space-y-3">
         <div class="flex justify-between items-center">
-          <span class="font-bold text-mp-maroon text-sm">🚀 Bulk Photo Upload</span>
+          <span class="font-bold text-mp-maroon text-sm">🚀 Bulk Photo Upload (100–150+)</span>
+          <button onclick="shopDemo100Photos()" class="bg-amber-100 text-amber-900 border border-amber-300 font-bold px-2 py-1 rounded">⚡ Demo Photos</button>
         </div>
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
           <div>
@@ -125,7 +127,7 @@
             <input type="file" id="shopUpFiles" multiple accept="image/*" class="w-full text-xs">
           </div>
         </div>
-        <button id="shopUploadBtn" onclick="shopSubmitUpload()" class="w-full bg-mp-maroon text-white font-bold py-2.5 rounded-lg uppercase">Upload & Send Now</button>
+        <button onclick="shopSubmitUpload()" class="w-full bg-mp-maroon text-white font-bold py-2.5 rounded-lg uppercase">Upload & Send Now</button>
       </div>
 
       <div class="space-y-2">
@@ -135,7 +137,7 @@
     </div>
   </div>
 
-  <!-- MODAL: ADD BUYER WITH TARGET CATEGORY & 1-CLICK INVITE -->
+  <!-- MODAL: ADD BUYER WITH FREE SMS & WHATSAPP 1-CLICK INVITE -->
   <div id="shopAddBuyerModal" class="hidden fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
     <div class="bg-white rounded-2xl max-w-md w-full p-5 shadow-2xl border-2 border-mp-orange space-y-3.5 text-xs">
       <div class="flex justify-between items-center border-b pb-2">
@@ -143,35 +145,27 @@
         <button onclick="document.getElementById('shopAddBuyerModal').classList.add('hidden')" class="text-slate-400 font-bold text-lg">✕</button>
       </div>
       <div>
-        <label class="block font-bold mb-1">1. Select Category *</label>
-        <select id="sNewCatSelect" onchange="syncShopModalPlace()" class="w-full border-2 border-orange-300 bg-orange-50 text-mp-maroon font-bold rounded-lg p-2.5 text-sm"></select>
-      </div>
-      <div>
-        <label class="block font-bold mb-1">2. Customer / Shop Name *</label>
+        <label class="block font-bold mb-1">1. Customer / Shop Name *</label>
         <input type="text" id="sNewName" placeholder="XYZ Textile" class="w-full border-2 rounded-lg p-2.5 text-sm">
       </div>
       <div>
-        <label class="block font-bold mb-1">3. Mobile Number (10 Digits) *</label>
-        <input type="tel" id="sNewPhone" placeholder="9876543210" class="w-full border-2 rounded-lg p-2.5 text-sm">
+        <label class="block font-bold mb-1">2. Mobile Number (10 Digits) *</label>
+        <input type="tel" id="sNewPhone" placeholder="8893173438" class="w-full border-2 rounded-lg p-2.5 text-sm">
       </div>
       <div>
-        <label class="block font-bold mb-1">4. Place / Location *</label>
-        <input type="text" id="sNewPlace" placeholder="Ernakulam" class="w-full border-2 rounded-lg p-2.5 text-sm">
+        <label class="block font-bold mb-1">3. Place / Location *</label>
+        <input type="text" id="sNewPlace" placeholder="Ernakulam, Tamil Nadu, Kottayam, Alappuzha, Other" class="w-full border-2 rounded-lg p-2.5 text-sm">
       </div>
       <button onclick="shopConfirmAddBuyer()" class="w-full bg-mp-maroon text-white font-black py-3 rounded-xl uppercase shadow">Add Buyer & Create Invite Link</button>
       <div id="sSmsBox" class="hidden bg-green-50 border-2 border-green-300 rounded-xl p-3.5 space-y-2.5"></div>
     </div>
   </div>
 
-  <!-- UNIFIED MASTER V3 ENGINE -->
   <script>
-    const FB_URL = "https://mumbai-prints-default-rtdb.firebaseio.com/mp_cloud_db_2026/v3_state.json";
-    const STORAGE_KEY = "mp_v3_master_db";
-    const AUTH_KEY = "mp_shop_autologin_v3";
+    const FB_URL = "https://mumbai-prints-default-rtdb.firebaseio.com/mp_cloud_db_2026.json";
+    const STORAGE_KEY = 'mumbai_prints_master_db_v1';
 
     const defaultDB = {
-      updatedAt: 1,
-      deletedIds: {},
       folders: ['Ajrakh Print', 'DJ Material', '3D Print', 'DCM', '320 Cut', '3 Meter Cut'],
       categories: {
         cat1: { id: 'cat1', name: 'Category 1', place: 'Ernakulam', buyerIds: ['b_9847011223'] },
@@ -187,382 +181,242 @@
         b_9446033441: { id: 'b_9446033441', name: 'Alleppey Collections', phone: '9446033441', place: 'Alappuzha', nickname: 'Anil', catKey: 'cat4', isFav: false }
       },
       chats: {
-        b_9847011223: [
-          { id: 'm_init_1', ts: 1, from: 'shop', sender: 'Mumbai Prints', text: 'Welcome to Mumbai Prints Exclusive Digital Catalog!', time: '10:00 AM' }
-        ]
+        b_9847011223: [{ msgId: 'm_init_1', from: 'shop', sender: 'Mumbai Prints', text: 'Welcome to Mumbai Prints Exclusive Digital Catalog!', time: '10:00 AM', ts: 1700000000000 }]
       },
       orders: [],
       designs: [
-        { id: 101, folder: 'Ajrakh Print', title: 'Ajrakh Pure Cotton #1', dateGroup: 'Today — 29 Oct 2026', targetCat: 'all', targetLabel: 'All Categories', img: 'https://images.unsplash.com/photo-1620799140408-edc6dcb6d633?auto=format&fit=crop&w=500&q=80', favBy: {} }
+        { id: 1, folder: 'Ajrakh Print', title: 'Ajrakh Pure Cotton #1', dateGroup: 'Today — 29 Oct 2026', targetCat: 'all', targetLabel: 'All Categories', img: 'https://images.unsplash.com/photo-1620799140408-edc6dcb6d633?auto=format&fit=crop&w=500&q=80', favBy: {} }
       ],
-      aboutUs: {
-        phone1: '8893173438',
-        phone2: '',
-        email: 'mumbaiprint18@gmail.com',
-        instagram: 'https://instagram.com/mumbaiprints',
-        message: 'Thank you so much for showing your trust in us. We will always stand by your side to support you. Thank you so much!'
-      }
+      aboutUs: { phone1: '8893173438', phone2: '', email: 'mumbaiprint18@gmail.com', instagram: '', message: 'Thank you so much for showing your trust in us. We will always stand by your side to support you. Thank you so much!' }
     };
 
-    function loadLocalDB() {
-      try {
-        const raw = localStorage.getItem(STORAGE_KEY);
-        if (raw) return JSON.parse(raw);
-      } catch (e) {}
-      return JSON.parse(JSON.stringify(defaultDB));
-    }
-
-    let db = loadLocalDB();
+    let db = JSON.parse(localStorage.getItem(STORAGE_KEY)) || defaultDB;
     let currentShopTab = 'categories';
     let drillStep = 'cat_list';
     let selectedCatKey = 'cat1';
     let selectedBuyerId = 'b_9847011223';
 
-    let isSavingToCloud = false;
-    let hasInitialCloudPullCompleted = false;
-    let pendingPush = false;
+    let cloudReady = false;
+    let isSyncing = false;
+    let lastCloudString = "";
 
-    function setSyncBadge(state) {
-      const el = document.getElementById('shopSyncBadge');
-      if (!el) return;
-      if (state === 'syncing') {
-        el.className = "text-[9px] bg-amber-500 text-slate-950 px-2 py-0.5 rounded-full font-bold";
-        el.innerText = "⏳ Saving...";
-      } else if (state === 'error') {
-        el.className = "text-[9px] bg-red-700 text-white px-2 py-0.5 rounded-full font-bold";
-        el.innerText = "⚠️ Offline";
-      } else {
-        el.className = "text-[9px] bg-green-900/90 border border-green-400 text-green-200 px-2 py-0.5 rounded-full font-bold";
-        el.innerText = "🟢 Synced";
-      }
+    function getCanonicalBuyerId(phone) {
+      const clean = String(phone || '').replace(/\D/g, '').slice(-10);
+      return clean.length === 10 ? ('b_' + clean) : ('b_' + Date.now());
     }
 
-    function safeSaveLocal(dataObj) {
-      try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(dataObj));
-      } catch (e) {
-        if (dataObj.designs && dataObj.designs.length > 15) {
-          dataObj.designs = dataObj.designs.slice(0, 15);
-          try { localStorage.setItem(STORAGE_KEY, JSON.stringify(dataObj)); } catch (err) {}
+    function matchPlaceToCategoryInDB(placeStr, refDB) {
+      const target = refDB || db;
+      const p = (placeStr || '').trim().toLowerCase();
+      for (let key of Object.keys(target.categories || {})) {
+        if (key !== 'catX' && (target.categories[key].place || '').toLowerCase() === p) {
+          return key;
         }
       }
+      return target.categories['catX'] ? 'catX' : Object.keys(target.categories)[0];
     }
 
-    function normalizeDB(d) {
-      if (!d || typeof d !== 'object') return JSON.parse(JSON.stringify(defaultDB));
-      if (!d.deletedIds) d.deletedIds = {};
-      if (!d.buyers) d.buyers = {};
-      if (!d.categories) d.categories = JSON.parse(JSON.stringify(defaultDB.categories));
-      if (!d.chats) d.chats = {};
-      if (!d.orders) d.orders = [];
-      if (!d.folders || d.folders.length === 0) d.folders = [...defaultDB.folders];
-      if (!d.designs) d.designs = [];
-      if (!d.aboutUs) d.aboutUs = { ...defaultDB.aboutUs };
+    function normalizeAndMigrateDB(targetDB) {
+      if (!targetDB || typeof targetDB !== 'object') return defaultDB;
+      if (!targetDB.categories) targetDB.categories = JSON.parse(JSON.stringify(defaultDB.categories));
+      if (!targetDB.buyers) targetDB.buyers = {};
+      if (!targetDB.chats) targetDB.chats = {};
+      if (!targetDB.orders) targetDB.orders = [];
+      if (!targetDB.folders || targetDB.folders.length === 0) targetDB.folders = [...defaultDB.folders];
+      if (!targetDB.designs) targetDB.designs = [];
+      if (!targetDB.aboutUs) targetDB.aboutUs = JSON.parse(JSON.stringify(defaultDB.aboutUs));
 
       const idMap = {};
-      const cleanBuyers = {};
-      Object.values(d.buyers).forEach(b => {
+      const newBuyers = {};
+      Object.values(targetDB.buyers).forEach(b => {
         if (!b || !b.phone) return;
         const cleanPhone = String(b.phone).replace(/\D/g, '').slice(-10);
         if (cleanPhone.length !== 10) return;
-        const normId = 'b_' + cleanPhone;
-        if (d.deletedIds[normId] || d.deletedIds[b.id]) return;
-        idMap[b.id] = normId;
-        cleanBuyers[normId] = {
-          ...b,
-          id: normId,
-          phone: cleanPhone,
-          catKey: (b.catKey && d.categories[b.catKey]) ? b.catKey : 'cat1'
-        };
+        const canonId = 'b_' + cleanPhone;
+        idMap[b.id] = canonId;
+        newBuyers[canonId] = Object.assign({}, newBuyers[canonId] || {}, b, { id: canonId, phone: cleanPhone });
       });
-      d.buyers = cleanBuyers;
+      targetDB.buyers = newBuyers;
 
-      const cleanChats = {};
-      Object.keys(d.chats).forEach(oldKey => {
-        const normKey = idMap[oldKey] || (oldKey.startsWith('b_') ? oldKey : null);
-        if (!normKey || d.deletedIds[normKey]) return;
-        if (!cleanChats[normKey]) cleanChats[normKey] = [];
-        (d.chats[oldKey] || []).forEach((m, idx) => {
-          if (!m) return;
-          if (!m.id) m.id = 'm_' + (m.ts || idx) + '_' + String(m.text || '').slice(0, 8).replace(/\W/g, '');
-          if (!m.ts) m.ts = idx + 1;
-          cleanChats[normKey].push(m);
+      const newChats = {};
+      Object.keys(targetDB.chats).forEach(oldId => {
+        const canonId = idMap[oldId] || oldId;
+        const list = targetDB.chats[oldId] || [];
+        if (!newChats[canonId]) newChats[canonId] = [];
+        const seen = new Set(newChats[canonId].map(m => m.msgId || (m.sender + '|' + m.text + '|' + m.time)));
+        list.forEach((m, idx) => {
+          if (!m.msgId) m.msgId = 'm_' + (m.ts || idx) + '_' + String(m.text).slice(0, 10);
+          const key = m.msgId || (m.sender + '|' + m.text + '|' + m.time);
+          if (!seen.has(key)) {
+            seen.add(key);
+            newChats[canonId].push(m);
+          }
         });
       });
-      d.chats = cleanChats;
+      targetDB.chats = newChats;
 
-      Object.keys(d.categories).forEach(catKey => {
-        const cat = d.categories[catKey];
-        cat.buyerIds = Array.from(new Set(
-          (cat.buyerIds || []).map(id => idMap[id] || id).filter(id => d.buyers[id] && d.buyers[id].catKey === catKey)
-        ));
+      targetDB.orders.forEach(o => {
+        if (o.buyerId && idMap[o.buyerId]) o.buyerId = idMap[o.buyerId];
+        else if (o.buyerPhone) o.buyerId = getCanonicalBuyerId(o.buyerPhone);
       });
-      Object.values(d.buyers).forEach(b => {
-        const ck = (b.catKey && d.categories[b.catKey]) ? b.catKey : 'cat1';
-        b.catKey = ck;
-        if (!d.categories[ck].buyerIds.includes(b.id)) {
-          d.categories[ck].buyerIds.unshift(b.id);
+
+      Object.keys(targetDB.categories).forEach(k => {
+        targetDB.categories[k].buyerIds = [];
+      });
+      Object.values(targetDB.buyers).forEach(b => {
+        const catK = (b.catKey && targetDB.categories[b.catKey]) ? b.catKey : matchPlaceToCategoryInDB(b.place, targetDB);
+        b.catKey = catK;
+        if (!targetDB.categories[catK].buyerIds.includes(b.id)) {
+          targetDB.categories[catK].buyerIds.push(b.id);
         }
       });
 
-      d.orders = (d.orders || []).filter(o => o && !d.deletedIds[o.id]).map(o => ({
-        ...o,
-        buyerId: idMap[o.buyerId] || o.buyerId
-      }));
-
-      return d;
+      return targetDB;
     }
 
     function mergeDatabases(localDB, cloudDB) {
-      if (!localDB) return normalizeDB(cloudDB);
-      if (!cloudDB) return normalizeDB(localDB);
-
-      const l = normalizeDB(JSON.parse(JSON.stringify(localDB)));
-      const c = normalizeDB(JSON.parse(JSON.stringify(cloudDB)));
+      const l = normalizeAndMigrateDB(JSON.parse(JSON.stringify(localDB || defaultDB)));
+      const c = normalizeAndMigrateDB(JSON.parse(JSON.stringify(cloudDB || defaultDB)));
       const merged = JSON.parse(JSON.stringify(c));
 
-      merged.updatedAt = Math.max(l.updatedAt || 0, c.updatedAt || 0);
-      merged.deletedIds = { ...(c.deletedIds || {}), ...(l.deletedIds || {}) };
+      merged.folders = Array.from(new Set([...(c.folders || []), ...(l.folders || [])]));
+      merged.categories = Object.assign({}, l.categories, c.categories);
 
-      merged.folders = Array.from(new Set([...(c.folders || []), ...(l.folders || [])]))
-        .filter(f => !merged.deletedIds['folder_' + f]);
-
-      merged.categories = { ...(c.categories || {}), ...(l.categories || {}) };
-
-      merged.buyers = { ...(c.buyers || {}), ...(l.buyers || {}) };
-      Object.keys(merged.buyers).forEach(id => {
-        if (merged.deletedIds[id]) {
-          delete merged.buyers[id];
-        } else if (c.buyers[id] && l.buyers[id]) {
-          merged.buyers[id] = (l.buyers[id].updatedAt || 0) >= (c.buyers[id].updatedAt || 0)
-            ? l.buyers[id]
-            : c.buyers[id];
+      merged.buyers = Object.assign({}, l.buyers, c.buyers);
+      Object.keys(l.buyers || {}).forEach(id => {
+        if (c.buyers && c.buyers[id]) {
+          merged.buyers[id] = Object.assign({}, c.buyers[id], l.buyers[id]);
+          if (c.buyers[id].nickname && !l.buyers[id].nickname) merged.buyers[id].nickname = c.buyers[id].nickname;
         }
       });
 
       merged.chats = {};
-      const allChatBuyerIds = new Set([...Object.keys(c.chats || {}), ...Object.keys(l.chats || {})]);
+      const allChatBuyerIds = new Set([...Object.keys(l.chats || {}), ...Object.keys(c.chats || {})]);
       allChatBuyerIds.forEach(bId => {
-        if (merged.deletedIds[bId]) return;
-        const msgMap = new Map();
-        [...(c.chats[bId] || []), ...(l.chats[bId] || [])].forEach((m, i) => {
-          if (!m) return;
-          const mId = m.id || ('m_' + (m.ts || i) + '_' + m.from + '_' + m.text);
-          msgMap.set(mId, { ...m, id: mId });
+        const combined = [...(c.chats?.[bId] || []), ...(l.chats?.[bId] || [])];
+        const uniqueMap = new Map();
+        combined.forEach((m, idx) => {
+          const key = m.msgId || `${m.from}_${m.sender}_${m.text}_${m.time}`;
+          if (!uniqueMap.has(key)) uniqueMap.set(key, m);
         });
-        merged.chats[bId] = Array.from(msgMap.values()).sort((a, b) => (a.ts || 0) - (b.ts || 0));
+        const arr = Array.from(uniqueMap.values());
+        arr.sort((a, b) => (a.ts || 0) - (b.ts || 0));
+        merged.chats[bId] = arr;
       });
 
-      const ordMap = new Map();
+      const orderMap = new Map();
       [...(c.orders || []), ...(l.orders || [])].forEach(o => {
-        if (o && o.id && !merged.deletedIds[o.id]) {
-          ordMap.set(String(o.id), o);
-        }
+        if (o && o.id) orderMap.set(String(o.id), o);
       });
-      merged.orders = Array.from(ordMap.values()).sort((a, b) => (b.ts || 0) - (a.ts || 0));
+      merged.orders = Array.from(orderMap.values()).sort((a, b) => (b.ts || 0) - (a.ts || 0));
 
-      const desMap = new Map();
+      const designMap = new Map();
       [...(c.designs || []), ...(l.designs || [])].forEach(d => {
-        if (d && d.id && !merged.deletedIds['des_' + d.id]) {
-          const existing = desMap.get(String(d.id));
-          if (existing) {
-            d.favBy = { ...(existing.favBy || {}), ...(d.favBy || {}) };
-          }
-          desMap.set(String(d.id), d);
+        if (d && d.id) {
+          const existing = designMap.get(String(d.id));
+          if (existing) d.favBy = Object.assign({}, existing.favBy || {}, d.favBy || {});
+          designMap.set(String(d.id), d);
         }
       });
-      merged.designs = Array.from(desMap.values());
+      merged.designs = Array.from(designMap.values());
 
-      return normalizeDB(merged);
+      return normalizeAndMigrateDB(merged);
     }
 
-    async function saveAndSyncNow() {
-      db.updatedAt = Date.now();
-      db = normalizeDB(db);
-      safeSaveLocal(db);
-
-      if (!hasInitialCloudPullCompleted) {
-        pendingPush = true;
-        return;
+    function setShopSyncBadge(text, bg) {
+      const b = document.getElementById('shopCloudBadge');
+      if (b) {
+        b.innerText = text;
+        b.className = `text-[10px] ${bg} text-white font-bold px-2 py-0.5 rounded-full`;
       }
-      if (isSavingToCloud) {
-        pendingPush = true;
-        return;
-      }
+    }
 
-      isSavingToCloud = true;
-      setSyncBadge('syncing');
+    async function saveDB() {
+      db = normalizeAndMigrateDB(db);
+      try { localStorage.setItem(STORAGE_KEY, JSON.stringify(db)); } catch (e) {}
+      if (!cloudReady) return;
+      await pushToCloudSafe();
+    }
+
+    async function pushToCloudSafe() {
+      if (isSyncing) return;
+      isSyncing = true;
+      setShopSyncBadge('⬆️ Saving...', 'bg-amber-600');
       try {
         const res = await fetch(FB_URL + "?t=" + Date.now(), { cache: "no-store" });
         if (res.ok) {
-          const cloudData = await res.json();
-          if (cloudData && typeof cloudData === 'object') {
-            db = mergeDatabases(db, cloudData);
-            safeSaveLocal(db);
+          const cloudWrapper = await res.json();
+          if (cloudWrapper && cloudWrapper[STORAGE_KEY]) {
+            const cloudDB = JSON.parse(cloudWrapper[STORAGE_KEY]);
+            db = mergeDatabases(db, cloudDB);
           }
         }
+        const finalStr = JSON.stringify(db);
+        try { localStorage.setItem(STORAGE_KEY, finalStr); } catch (e) {}
+        lastCloudString = finalStr;
+
         await fetch(FB_URL, {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(db)
+          body: JSON.stringify({ [STORAGE_KEY]: finalStr, updatedAt: Date.now() })
         });
-        setSyncBadge('synced');
+        setShopSyncBadge('🟢 Synced', 'bg-emerald-700');
       } catch (e) {
-        setSyncBadge('error');
-      } finally {
-        isSavingToCloud = false;
-        if (pendingPush) {
-          pendingPush = false;
-          setTimeout(saveAndSyncNow, 150);
-        }
+        setShopSyncBadge('⚠️ Offline', 'bg-red-700');
       }
+      isSyncing = false;
     }
 
-    function playNotificationSound() {
+    async function forceCloudPull() {
+      if (isSyncing) return;
+      isSyncing = true;
       try {
-        const AudioCtx = window.AudioContext || window.webkitAudioContext;
-        const ctx = new AudioCtx();
-        const osc = ctx.createOscillator();
-        const gain = ctx.createGain();
-        osc.type = "sine";
-        osc.frequency.setValueAtTime(880, ctx.currentTime);
-        osc.frequency.setValueAtTime(1174.66, ctx.currentTime + 0.12);
-        gain.gain.setValueAtTime(0.35, ctx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.45);
-        osc.connect(gain); gain.connect(ctx.destination);
-        osc.start(); osc.stop(ctx.currentTime + 0.45);
-      } catch (e) {}
-    }
+        const res = await fetch(FB_URL + "?t=" + Date.now(), { cache: "no-store" });
+        if (res.ok) {
+          const cloudWrapper = await res.json();
+          if (cloudWrapper && cloudWrapper[STORAGE_KEY]) {
+            const cloudStr = cloudWrapper[STORAGE_KEY];
+            if (cloudStr !== lastCloudString || !cloudReady) {
+              const oldDB = JSON.parse(JSON.stringify(db));
+              const cloudDB = JSON.parse(cloudStr);
+              db = mergeDatabases(db, cloudDB);
+              const mergedStr = JSON.stringify(db);
+              try { localStorage.setItem(STORAGE_KEY, mergedStr); } catch (e) {}
 
-    function navigateToTarget(action) {
-      if (!action) return;
-      if (action.type === "order") {
-        switchShopBottomTab("orders");
-      } else if (action.type === "chat" && action.buyerId) {
-        if (db.buyers[action.buyerId]) {
-          selectedCatKey = db.buyers[action.buyerId].catKey || "cat1";
-        }
-        selectedBuyerId = action.buyerId;
-        currentShopTab = "categories";
-        drillStep = "chat_view";
-        renderShopView();
-      }
-    }
+              if (cloudReady) {
+                detectChangesAndNotify(oldDB, db);
+              }
+              lastCloudString = mergedStr;
 
-    function showSmartNotification(title, body, action) {
-      playNotificationSound();
-      if ("Notification" in window && Notification.permission === "granted") {
-        try {
-          const sysNotif = new Notification(title, { body: body });
-          sysNotif.onclick = function() { window.focus(); navigateToTarget(action); this.close(); };
-        } catch (e) {}
-      }
-      const toast = document.createElement("div");
-      toast.style.cssText = "position:fixed;top:16px;right:16px;background:#68150f;color:#fff;padding:14px 18px;border-radius:12px;box-shadow:0 8px 25px rgba(0,0,0,0.4);z-index:999999;font-family:sans-serif;font-size:13px;max-width:320px;border:2px solid #ffcc00;cursor:pointer;";
-      toast.innerHTML = `
-        <div style="font-weight:bold;font-size:14px;color:#ffcc00;margin-bottom:4px;">🔔 ${title}</div>
-        <div style="font-size:12px;line-height:1.4;">${body}</div>
-        <div style="font-size:10px;color:#ffd54f;margin-top:6px;font-weight:bold;text-transform:uppercase;">👉 Tap here to open directly</div>
-      `;
-      toast.onclick = function() { navigateToTarget(action); toast.remove(); };
-      document.body.appendChild(toast);
-      setTimeout(() => { if (toast.parentNode) toast.remove(); }, 7000);
-    }
-
-    function detectChangesAndNotify(oldDB, newDB) {
-      if (!oldDB || !newDB) return;
-      const oldOrderIds = new Set((oldDB.orders || []).map(o => String(o.id)));
-      const newOrders = (newDB.orders || []).filter(o => !oldOrderIds.has(String(o.id)));
-      if (newOrders.length > 0) {
-        const latestOrder = newOrders[0];
-        const buyer = (newDB.buyers && newDB.buyers[latestOrder.buyerId]) || { name: latestOrder.buyerName || "Customer" };
-        showSmartNotification(
-          `New Order from ${buyer.nickname || buyer.name}!`,
-          `📦 ${latestOrder.designTitle} — Qty: ${latestOrder.qty}`,
-          { type: "order", buyerId: latestOrder.buyerId }
-        );
-        return;
-      }
-
-      const oldBuyerIds = new Set(Object.keys(oldDB.buyers || {}));
-      const newBuyerIds = Object.keys(newDB.buyers || {}).filter(id => !oldBuyerIds.has(id));
-      if (newBuyerIds.length === 1) {
-        const nb = newDB.buyers[newBuyerIds[0]];
-        showSmartNotification(
-          `New Buyer Joined: ${nb.name}`,
-          `📍 Place: ${nb.place} • 📞 ${nb.phone}`,
-          { type: "chat", buyerId: nb.id }
-        );
-      }
-
-      const oldChats = oldDB.chats || {};
-      const newChats = newDB.chats || {};
-      for (const bId of Object.keys(newChats)) {
-        const oldList = oldChats[bId] || [];
-        const newList = newChats[bId] || [];
-        if (newList.length > oldList.length) {
-          const lastMsg = newList[newList.length - 1];
-          const buyer = (newDB.buyers && newDB.buyers[bId]) || { name: lastMsg.sender || "Customer" };
-          if (lastMsg.from !== "shop") {
-            showSmartNotification(
-              `Message from ${buyer.nickname || buyer.name}`,
-              `💬 "${lastMsg.text}"`,
-              { type: "chat", buyerId: bId }
-            );
+              const activeEl = document.activeElement;
+              const isTyping = activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA');
+              if (!isTyping) {
+                renderShopView();
+              }
+            }
+          } else {
+            cloudReady = true;
+            isSyncing = false;
+            await pushToCloudSafe();
             return;
           }
         }
+        cloudReady = true;
+        setShopSyncBadge('🟢 Synced', 'bg-emerald-700');
+      } catch (e) {
+        cloudReady = true;
+        setShopSyncBadge('⚠️ Retry', 'bg-red-700');
       }
+      isSyncing = false;
     }
 
-    async function pullFromCloudNow() {
-      if (isSavingToCloud) return;
-      try {
-        const res = await fetch(FB_URL + "?t=" + Date.now(), { cache: "no-store" });
-        if (!res.ok) return;
-        const cloudData = await res.json();
-
-        if (!cloudData || typeof cloudData !== "object") {
-          hasInitialCloudPullCompleted = true;
-          await saveAndSyncNow();
-          return;
-        }
-
-        const oldSnapshot = JSON.parse(JSON.stringify(db));
-        const merged = mergeDatabases(db, cloudData);
-
-        if (hasInitialCloudPullCompleted) {
-          detectChangesAndNotify(oldSnapshot, merged);
-        }
-
-        const changed = JSON.stringify(merged) !== JSON.stringify(db);
-        const cloudNeedsUpdate = JSON.stringify(merged) !== JSON.stringify(normalizeDB(cloudData));
-
-        db = merged;
-        safeSaveLocal(db);
-        hasInitialCloudPullCompleted = true;
-
-        const activeEl = document.activeElement;
-        const isTyping = activeEl && (activeEl.tagName === "INPUT" || activeEl.tagName === "TEXTAREA" || activeEl.tagName === "SELECT");
-        if (changed && !isTyping) {
-          renderShopView();
-        }
-
-        if (cloudNeedsUpdate || pendingPush) {
-          pendingPush = false;
-          await saveAndSyncNow();
-        }
-      } catch (e) {}
-    }
-
-    function buildInviteLinks(name, phone, place, catKey) {
-      const cleanName = name || 'Valued Partner';
-      const cleanPlace = place || 'Ernakulam';
-      const cleanCat = catKey || selectedCatKey || 'cat1';
+    function buildInviteLinks(name, phone, place) {
+      const cleanName = (name || 'Valued Partner').trim();
+      const cleanPlace = (place || 'Ernakulam').trim();
       const digitsOnly = String(phone || '').replace(/\D/g, '').slice(-10);
       const waPhone = (digitsOnly.length === 10) ? '91' + digitsOnly : digitsOnly;
       const baseUrl = window.location.origin + window.location.pathname.replace(/admin\.html|shop\.html/i, 'customer.html');
-      const inviteLink = `${baseUrl}?invite=1&phone=${encodeURIComponent(digitsOnly)}&name=${encodeURIComponent(cleanName)}&place=${encodeURIComponent(cleanPlace)}&cat=${encodeURIComponent(cleanCat)}`;
+      const inviteLink = `${baseUrl}?invite=1&phone=${encodeURIComponent(digitsOnly)}&name=${encodeURIComponent(cleanName)}&place=${encodeURIComponent(cleanPlace)}`;
       const waMsg = `Hello *${cleanName}*,\n\nWelcome to the *Mumbai Prints* Exclusive Digital Catalog! 🌟\n\nExplore our latest textile collections, view new designs, and place your orders directly using the link below:\n👉 ${inviteLink}\n\n🔑 *Your Login Mobile Number:* ${digitsOnly}\n\nThank you,\n*Team Mumbai Prints*`;
       const smsText = waMsg.replace(/\*/g, '');
       const waUrl = `https://wa.me/${waPhone}?text=${encodeURIComponent(waMsg)}`;
@@ -574,7 +428,8 @@
       const u = document.getElementById('shopUser').value.trim();
       const p = document.getElementById('shopPass').value.trim();
       if ((u === 'Mumbai29' && p === 'MU2000') || (u === 'shop' && p === 'mp1234')) {
-        localStorage.setItem(AUTH_KEY, 'true');
+        sessionStorage.setItem('mp_shop_auth', '1');
+        localStorage.setItem('mp_shop_autologin_v1', 'true');
         initShopApp();
       } else {
         alert('Invalid Staff Credentials! Use: Mumbai29 / MU2000');
@@ -582,14 +437,19 @@
     }
 
     function shopLogout() {
-      localStorage.removeItem(AUTH_KEY);
+      sessionStorage.removeItem('mp_shop_auth');
+      localStorage.removeItem('mp_shop_autologin_v1');
       location.reload();
     }
 
-    function initShopApp() {
-      if (localStorage.getItem(AUTH_KEY) === 'true') {
+    async function initShopApp() {
+      if (sessionStorage.getItem('mp_shop_auth') === '1' || localStorage.getItem('mp_shop_autologin_v1') === 'true') {
+        sessionStorage.setItem('mp_shop_auth', '1');
         document.getElementById('shopLoginSection').classList.add('hidden');
         document.getElementById('shopMainApp').classList.remove('hidden');
+        db = normalizeAndMigrateDB(db);
+        renderShopView();
+        await forceCloudPull();
         renderShopView();
       }
     }
@@ -607,57 +467,8 @@
       renderShopView();
     }
 
-    function addBuyerToDatabase(name, phone, place, targetCatKey) {
-      const cleanPhone = String(phone || '').replace(/\D/g, '').slice(-10);
-      if (cleanPhone.length !== 10) return null;
-      const cleanName = (name || 'Buyer').trim();
-      const cleanPlace = (place || 'Ernakulam').trim();
-      const buyerId = 'b_' + cleanPhone;
-
-      let catKey = targetCatKey;
-      if (!catKey || !db.categories[catKey]) {
-        catKey = 'catX';
-        Object.keys(db.categories).forEach(k => {
-          if (k !== 'catX' && db.categories[k].place.toLowerCase() === cleanPlace.toLowerCase()) {
-            catKey = k;
-          }
-        });
-      }
-      if (!db.categories[catKey]) catKey = Object.keys(db.categories)[0] || 'cat1';
-
-      delete db.deletedIds[buyerId];
-
-      db.buyers[buyerId] = {
-        id: buyerId,
-        name: cleanName,
-        phone: cleanPhone,
-        place: cleanPlace,
-        nickname: db.buyers[buyerId]?.nickname || '',
-        catKey: catKey,
-        isFav: db.buyers[buyerId]?.isFav || false,
-        updatedAt: Date.now()
-      };
-
-      Object.keys(db.categories).forEach(k => {
-        db.categories[k].buyerIds = (db.categories[k].buyerIds || []).filter(id => id !== buyerId);
-      });
-      db.categories[catKey].buyerIds.unshift(buyerId);
-
-      if (!db.chats[buyerId] || db.chats[buyerId].length === 0) {
-        db.chats[buyerId] = [{
-          id: 'm_welcome_' + cleanPhone,
-          ts: Date.now(),
-          from: 'shop',
-          sender: 'Mumbai Prints',
-          text: `Welcome ${cleanName}! You have been added to the Mumbai Prints Exclusive Digital Catalog.`,
-          time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-        }];
-      }
-
-      return { buyerId, catKey };
-    }
-
     function renderShopView() {
+      db = normalizeAndMigrateDB(db);
       const ordBadge = document.getElementById('shopOrdBadge');
       if (ordBadge) ordBadge.innerText = (db.orders || []).length;
       const box = document.getElementById('shopDynamicView');
@@ -678,7 +489,6 @@
               <div class="divide-y divide-slate-100">
           `;
           Object.values(db.categories).forEach(cat => {
-            const count = (cat.buyerIds || []).filter(id => db.buyers[id]).length;
             html += `
               <div onclick="selectedCatKey='${cat.id}'; drillStep='cust_list'; renderShopView();" class="p-4 flex justify-between items-center hover:bg-orange-50 cursor-pointer transition">
                 <div>
@@ -686,7 +496,7 @@
                   <div class="text-xs text-slate-600 font-semibold">📍 Place: ${cat.place}</div>
                 </div>
                 <div class="flex items-center gap-2">
-                  <span class="bg-orange-100 text-mp-maroon font-bold text-xs px-3 py-1 rounded-full">${count} Buyers</span>
+                  <span class="bg-orange-100 text-mp-maroon font-bold text-xs px-3 py-1 rounded-full">${(cat.buyerIds || []).length} Buyers</span>
                   <span class="text-mp-orange font-black text-lg">→</span>
                 </div>
               </div>
@@ -697,7 +507,6 @@
         }
         else if (drillStep === 'cust_list') {
           const cat = db.categories[selectedCatKey] || Object.values(db.categories)[0];
-          const validIds = (cat.buyerIds || []).filter(id => db.buyers[id]);
           let html = `
             <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
               <div class="bg-[#fcedea] p-3.5 border-b border-orange-200 flex justify-between items-center">
@@ -712,13 +521,14 @@
               </div>
               <div class="divide-y divide-slate-100">
           `;
-          if (validIds.length === 0) {
+          if (!cat.buyerIds || cat.buyerIds.length === 0) {
             html += `<div class="p-8 text-center text-xs text-slate-400">No customers in ${cat.name} yet.</div>`;
           } else {
-            validIds.forEach(id => {
+            cat.buyerIds.forEach(id => {
               const b = db.buyers[id];
               if (!b) return;
-              const inv = buildInviteLinks(b.name, b.phone, b.place, b.catKey);
+              const inv = buildInviteLinks(b.name, b.phone, b.place);
+              const msgCount = (db.chats[id] || []).length;
               let shiftOpts = Object.values(db.categories).map(c =>
                 `<option value="${c.id}" ${c.id === b.catKey ? 'selected' : ''}>${c.name}</option>`
               ).join('');
@@ -737,7 +547,7 @@
                       <button onclick="shopRemoveBuyer('${id}')" class="text-[10px] bg-red-100 text-red-700 px-2 py-0.5 rounded font-bold">Remove</button>
                     </div>
                   </div>
-                  <span class="bg-mp-maroon text-white text-xs font-bold px-3 py-1.5 rounded-xl shrink-0">💬 Chat →</span>
+                  <span class="bg-mp-maroon text-white text-xs font-bold px-3 py-1.5 rounded-xl shrink-0">💬 Chat (${msgCount}) →</span>
                 </div>
               `;
             });
@@ -800,8 +610,9 @@
           html += `<div class="text-center py-12 text-xs text-slate-400">No orders received yet.</div>`;
         } else {
           db.orders.forEach(o => {
-            const b = db.buyers[o.buyerId] || { name: o.buyerName || 'Buyer', place: o.buyerPlace || 'Unknown', catKey: o.catKey || 'cat1' };
-            const cat = db.categories[b.catKey] || { name: 'Category', place: b.place };
+            const canonId = o.buyerId || getCanonicalBuyerId(o.buyerPhone);
+            const b = db.buyers[canonId] || { name: o.buyerName || 'Buyer', phone: o.buyerPhone || '', place: o.buyerPlace || 'Unknown', catKey: 'catX' };
+            const cat = db.categories[b.catKey] || { name: 'Category X', place: b.place };
             html += `
               <div class="p-3 rounded-xl border-2 border-orange-100 bg-orange-50/40 flex flex-col sm:flex-row justify-between gap-3 items-start sm:items-center">
                 <div class="flex gap-3 items-center">
@@ -809,14 +620,14 @@
                   <div>
                     <div class="flex flex-wrap gap-1.5 items-center mb-1">
                       <span class="bg-mp-maroon text-white text-[10px] font-bold px-2 py-0.5 rounded">${cat.name} (${cat.place})</span>
-                      <span class="bg-orange-200 text-mp-maroon text-[10px] font-bold px-2 py-0.5 rounded">👤 ${b.nickname || b.name} (${b.phone || o.buyerPhone || ''})</span>
+                      <span class="bg-orange-200 text-mp-maroon text-[10px] font-bold px-2 py-0.5 rounded">👤 ${b.nickname || b.name} (${b.phone || ''})</span>
                       <span class="text-[10px] text-slate-400">${o.time || ''}</span>
                     </div>
                     <div class="text-xs font-bold text-slate-800">👕 Design: ${o.designTitle}</div>
                     <div class="text-xs font-black text-mp-orange">📦 Ordered Qty: ${o.qty}</div>
                   </div>
                 </div>
-                <button onclick="selectedBuyerId='${o.buyerId}'; currentShopTab='categories'; drillStep='chat_view'; renderShopView();" class="bg-mp-maroon text-white text-xs font-bold px-3.5 py-2 rounded-xl shrink-0">
+                <button onclick="selectedBuyerId='${canonId}'; currentShopTab='categories'; drillStep='chat_view'; renderShopView();" class="bg-mp-maroon text-white text-xs font-bold px-3.5 py-2 rounded-xl shrink-0">
                   💬 Reply in Chat
                 </button>
               </div>
@@ -842,7 +653,7 @@
           html += `<div class="text-center py-12 text-xs text-slate-400">No favorite customers starred yet. Tap ☆ next to any buyer to star them!</div>`;
         } else {
           favBuyers.forEach(b => {
-            const cat = db.categories[b.catKey] || { name: 'Category', place: b.place };
+            const cat = db.categories[b.catKey] || { name: 'Category X', place: b.place };
             html += `
               <div class="p-3 rounded-xl border border-slate-200 flex justify-between items-center hover:bg-orange-50">
                 <div>
@@ -866,36 +677,29 @@
     }
 
     function shopToggleFav(id) {
-      if (!db.buyers[id]) return;
-      db.buyers[id].isFav = !db.buyers[id].isFav;
-      db.buyers[id].updatedAt = Date.now();
-      renderShopView();
-      saveAndSyncNow();
+      if (db.buyers[id]) {
+        db.buyers[id].isFav = !db.buyers[id].isFav;
+        saveDB();
+        renderShopView();
+      }
     }
 
     function shopShiftBuyer(id, newCatKey) {
       const b = db.buyers[id];
       if (!b || b.catKey === newCatKey) return;
-      db.categories[b.catKey].buyerIds = (db.categories[b.catKey].buyerIds || []).filter(x => x !== id);
-      db.categories[newCatKey].buyerIds.unshift(id);
       b.catKey = newCatKey;
-      b.updatedAt = Date.now();
-      renderShopView();
-      saveAndSyncNow();
+      saveDB();
       alert(`Shifted ${b.name} to ${db.categories[newCatKey].name}!`);
+      renderShopView();
     }
 
     function shopRemoveBuyer(id) {
       const b = db.buyers[id];
       if (!b) return;
       if (confirm(`Remove ${b.name}?`)) {
-        db.deletedIds[id] = true;
-        if (db.categories[b.catKey]) {
-          db.categories[b.catKey].buyerIds = db.categories[b.catKey].buyerIds.filter(x => x !== id);
-        }
         delete db.buyers[id];
+        saveDB();
         renderShopView();
-        saveAndSyncNow();
       }
     }
 
@@ -904,25 +708,44 @@
       const text = input ? input.value.trim() : '';
       if (!text || !selectedBuyerId) return;
       if (!db.chats[selectedBuyerId]) db.chats[selectedBuyerId] = [];
-      const nowTs = Date.now();
+      const now = Date.now();
       db.chats[selectedBuyerId].push({
-        id: 'm_' + nowTs + '_' + Math.floor(Math.random() * 1000),
-        ts: nowTs,
+        msgId: 'm_' + now + '_' + Math.floor(Math.random() * 1000),
         from: 'shop',
         sender: 'Mumbai Prints (Shop)',
         text,
-        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        ts: now
       });
       input.value = '';
       renderShopView();
-      saveAndSyncNow();
+      saveDB();
     }
 
-    // Studio Modal (Upload & Folders)
     function toggleStudioModal() {
       const m = document.getElementById('shopStudioModal');
       m.classList.toggle('hidden');
       if (!m.classList.contains('hidden')) renderStudioModalContent();
+    }
+
+    function compressImageFile(file, callback) {
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const img = new Image();
+        img.onload = function() {
+          const canvas = document.createElement('canvas');
+          const maxW = 800;
+          const scale = img.width > maxW ? (maxW / img.width) : 1;
+          canvas.width = img.width * scale;
+          canvas.height = img.height * scale;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+          callback(canvas.toDataURL('image/jpeg', 0.72));
+        };
+        img.onerror = function() { callback(e.target.result); };
+        img.src = e.target.result;
+      };
+      reader.readAsDataURL(file);
     }
 
     function renderStudioModalContent() {
@@ -962,60 +785,28 @@
 
     function shopAddFolder() {
       const n = prompt('New Fabric Folder Name:');
-      if (n && n.trim()) {
-        const clean = n.trim();
-        delete db.deletedIds['folder_' + clean];
-        if (!db.folders.includes(clean)) db.folders.push(clean);
-        renderStudioModalContent();
-        saveAndSyncNow();
-      }
+      if (n && n.trim()) { db.folders.push(n.trim()); saveDB(); renderStudioModalContent(); }
     }
 
     function shopRenameFolder(oldN) {
       const newN = prompt('Rename Folder:', oldN);
       if (newN && newN.trim()) {
-        const clean = newN.trim();
-        db.deletedIds['folder_' + oldN] = true;
-        delete db.deletedIds['folder_' + clean];
-        db.folders = db.folders.map(f => f === oldN ? clean : f);
-        db.designs.forEach(d => { if (d.folder === oldN) d.folder = clean; });
+        db.folders = db.folders.map(f => f === oldN ? newN.trim() : f);
+        db.designs.forEach(d => { if (d.folder === oldN) d.folder = newN.trim(); });
+        saveDB();
         renderStudioModalContent();
-        saveAndSyncNow();
       }
     }
 
     function shopDeleteFolder(fName) {
       if (confirm(`Delete folder "${fName}"?`)) {
-        db.deletedIds['folder_' + fName] = true;
         db.folders = db.folders.filter(f => f !== fName);
+        saveDB();
         renderStudioModalContent();
-        saveAndSyncNow();
       }
     }
 
-    function compressImageFile(file) {
-      return new Promise((resolve) => {
-        const reader = new FileReader();
-        reader.onload = (e) => {
-          const img = new Image();
-          img.onload = () => {
-            const canvas = document.createElement('canvas');
-            const maxW = 750;
-            const scale = img.width > maxW ? maxW / img.width : 1;
-            canvas.width = Math.round(img.width * scale);
-            canvas.height = Math.round(img.height * scale);
-            const ctx = canvas.getContext('2d');
-            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-            resolve(canvas.toDataURL('image/jpeg', 0.65));
-          };
-          img.onerror = () => resolve(e.target.result);
-          img.src = e.target.result;
-        };
-        reader.readAsDataURL(file);
-      });
-    }
-
-    async function shopSubmitUpload() {
+    function shopSubmitUpload() {
       const folder = document.getElementById('shopUpFolder').value;
       const targetCat = document.getElementById('shopUpCat').value;
       const targetLabel = document.getElementById('shopUpCat').selectedOptions[0].text;
@@ -1023,63 +814,66 @@
       const files = document.getElementById('shopUpFiles').files;
       if (!files || files.length === 0) { alert('Select at least 1 photo!'); return; }
 
-      const btn = document.getElementById('shopUploadBtn');
-      btn.innerText = '⏳ Compressing & Uploading...';
-      btn.disabled = true;
+      let done = 0;
+      Array.from(files).forEach((file, i) => {
+        compressImageFile(file, (compressedUrl) => {
+          db.designs.unshift({
+            id: Date.now() + i,
+            folder,
+            title: `${prefix} #${i + 1}`,
+            dateGroup: 'Today — 29 Oct 2026',
+            targetCat,
+            targetLabel,
+            img: compressedUrl,
+            favBy: {}
+          });
+          done++;
+          if (done === files.length) {
+            saveDB();
+            renderStudioModalContent();
+            alert(`${files.length} photos uploaded & synced successfully!`);
+          }
+        });
+      });
+    }
 
-      for (let i = 0; i < files.length; i++) {
-        const compressed = await compressImageFile(files[i]);
+    function shopDemo100Photos() {
+      const folder = document.getElementById('shopUpFolder').value;
+      const targetCat = document.getElementById('shopUpCat').value;
+      const targetLabel = document.getElementById('shopUpCat').selectedOptions[0].text;
+      for (let i = 20; i >= 1; i--) {
         db.designs.unshift({
           id: Date.now() + i,
           folder,
-          title: `${prefix} #${i + 1}`,
+          title: `${folder} Lot #${i}`,
           dateGroup: 'Today — 29 Oct 2026',
           targetCat,
           targetLabel,
-          img: compressed,
+          img: 'https://images.unsplash.com/photo-1620799140408-edc6dcb6d633?auto=format&fit=crop&w=400&q=60',
           favBy: {}
         });
       }
-
+      saveDB();
       renderStudioModalContent();
-      await saveAndSyncNow();
-      btn.innerText = 'Upload & Send Now';
-      btn.disabled = false;
-      alert(`${files.length} photos uploaded successfully!`);
+      alert('Demo Photos uploaded!');
     }
 
     function shopEditPhoto(id) {
       const d = db.designs.find(x => x.id === id);
       if (!d) return;
       const t = prompt('Edit Design Title:', d.title);
-      if (t && t.trim()) {
-        d.title = t.trim();
-        renderStudioModalContent();
-        saveAndSyncNow();
-      }
+      if (t && t.trim()) { d.title = t.trim(); saveDB(); renderStudioModalContent(); }
     }
 
     function shopDeletePhoto(id) {
       if (confirm('Delete this sent photo?')) {
-        db.deletedIds['des_' + id] = true;
         db.designs = db.designs.filter(x => x.id !== id);
+        saveDB();
         renderStudioModalContent();
-        saveAndSyncNow();
-      }
-    }
-
-    function syncShopModalPlace() {
-      const catId = document.getElementById('sNewCatSelect').value;
-      if (db.categories[catId]) {
-        document.getElementById('sNewPlace').value = db.categories[catId].place;
       }
     }
 
     function openShopAddBuyer() {
-      const catSel = document.getElementById('sNewCatSelect');
-      catSel.innerHTML = Object.values(db.categories).map(c =>
-        `<option value="${c.id}" ${c.id === selectedCatKey ? 'selected' : ''}>${c.name} (${c.place})</option>`
-      ).join('');
       document.getElementById('sNewName').value = '';
       document.getElementById('sNewPhone').value = '';
       document.getElementById('sNewPlace').value = db.categories[selectedCatKey]?.place || '';
@@ -1087,32 +881,67 @@
       document.getElementById('shopAddBuyerModal').classList.remove('hidden');
     }
 
-    async function shopConfirmAddBuyer() {
-      const chosenCat = document.getElementById('sNewCatSelect').value;
+    function addOrUpdateBuyerInMemory(name, phone, place, preferredCatKey) {
+      const cleanPhone = String(phone || '').replace(/\D/g, '').slice(-10);
+      if (cleanPhone.length !== 10) return null;
+      const cleanName = (name || 'Buyer').trim();
+      const cleanPlace = (place || 'Ernakulam').trim();
+      const buyerId = getCanonicalBuyerId(cleanPhone);
+
+      const targetCatKey = preferredCatKey || matchPlaceToCategoryInDB(cleanPlace, db);
+      const existing = db.buyers[buyerId] || {};
+
+      db.buyers[buyerId] = {
+        id: buyerId,
+        name: cleanName,
+        phone: cleanPhone,
+        place: cleanPlace,
+        nickname: existing.nickname || '',
+        catKey: targetCatKey,
+        isFav: existing.isFav || false
+      };
+
+      if (!db.chats[buyerId] || db.chats[buyerId].length === 0) {
+        const nowStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        db.chats[buyerId] = [{
+          msgId: 'm_welcome_' + cleanPhone,
+          from: 'shop',
+          sender: 'Mumbai Prints',
+          text: `Welcome ${cleanName}! You have been added to the Mumbai Prints Exclusive Digital Catalog.`,
+          time: nowStr,
+          ts: Date.now()
+        }];
+      }
+
+      db = normalizeAndMigrateDB(db);
+      return { buyerId, targetCatKey };
+    }
+
+    function shopConfirmAddBuyer() {
       const name = document.getElementById('sNewName').value.trim();
       const phone = document.getElementById('sNewPhone').value.trim();
       const place = document.getElementById('sNewPlace').value.trim();
       if (!name || !phone || !place) {
-        alert('Please enter Name, 10-Digit Mobile Number, and Place!');
+        alert('Name, 10-Digit Mobile Number, and Place are required!');
         return;
       }
 
-      const res = addBuyerToDatabase(name, phone, place, chosenCat);
+      const res = addOrUpdateBuyerInMemory(name, phone, place, null);
       if (!res) {
         alert('Please enter a valid 10-digit mobile number!');
         return;
       }
 
-      selectedCatKey = res.catKey;
+      selectedCatKey = res.targetCatKey;
       selectedBuyerId = res.buyerId;
       renderShopView();
-      saveAndSyncNow();
+      saveDB();
 
-      const inv = buildInviteLinks(name, phone, place, res.catKey);
+      const inv = buildInviteLinks(name, phone, place);
       const box = document.getElementById('sSmsBox');
       box.classList.remove('hidden');
       box.innerHTML = `
-        <div class="font-bold text-green-900">✅ Added to ${db.categories[res.catKey].name} (${db.categories[res.catKey].place})!</div>
+        <div class="font-bold text-green-900">✅ Added & Synced to ${db.categories[res.targetCatKey].name} (${db.categories[res.targetCatKey].place})!</div>
         <div class="text-[11px] bg-white p-2.5 rounded border border-green-200 whitespace-pre-line">${inv.smsText}</div>
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
           <a href="${inv.smsUrl}" class="bg-blue-600 text-white text-center font-bold py-2.5 rounded-xl shadow">📲 1. Send Free SIM SMS</a>
@@ -1122,8 +951,112 @@
       `;
     }
 
-    // Floating Bulk Buyer Upload Modal
-    (function setupBulkBuyerModal() {
+    // Smart Notifications & Bulk Add Modal
+    function playNotificationSound() {
+      try {
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        const ctx = new AudioCtx();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = "sine";
+        osc.frequency.setValueAtTime(880, ctx.currentTime);
+        osc.frequency.setValueAtTime(1174.66, ctx.currentTime + 0.12);
+        gain.gain.setValueAtTime(0.35, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.45);
+        osc.connect(gain); gain.connect(ctx.destination);
+        osc.start(); osc.stop(ctx.currentTime + 0.45);
+      } catch (e) {}
+    }
+
+    function navigateToTarget(action) {
+      if (!action) return;
+      if (action.type === "order") {
+        switchShopBottomTab("orders");
+      } else if (action.type === "chat" && action.buyerId) {
+        if (db.buyers[action.buyerId]) {
+          selectedCatKey = db.buyers[action.buyerId].catKey || "cat1";
+        }
+        selectedBuyerId = action.buyerId;
+        currentShopTab = "categories";
+        drillStep = "chat_view";
+        renderShopView();
+      }
+    }
+
+    function showSmartNotification(title, body, action) {
+      playNotificationSound();
+      if ("Notification" in window && Notification.permission === "granted") {
+        try {
+          const sysNotif = new Notification(title, { body: body });
+          sysNotif.onclick = function() { window.focus(); navigateToTarget(action); this.close(); };
+        } catch (e) {}
+      }
+      const toast = document.createElement("div");
+      toast.style.cssText = "position:fixed;top:16px;right:16px;background:#68150f;color:#fff;padding:14px 18px;border-radius:12px;box-shadow:0 8px 25px rgba(0,0,0,0.4);z-index:999999;font-family:sans-serif;font-size:13px;max-width:320px;border:2px solid #ffcc00;cursor:pointer;";
+      toast.innerHTML = `
+        <div style="font-weight:bold;font-size:14px;color:#ffcc00;margin-bottom:4px;">🔔 ${title}</div>
+        <div style="font-size:12px;line-height:1.4;">${body}</div>
+        <div style="font-size:10px;color:#ffd54f;margin-top:6px;font-weight:bold;text-transform:uppercase;">👉 Tap here to open directly</div>
+      `;
+      toast.onclick = function() { navigateToTarget(action); toast.remove(); };
+      document.body.appendChild(toast);
+      setTimeout(() => { if (toast.parentNode) toast.remove(); }, 7000);
+    }
+
+    if ("Notification" in window && Notification.permission === "default") {
+      document.addEventListener("click", function reqPerm() {
+        Notification.requestPermission();
+        document.removeEventListener("click", reqPerm);
+      }, { once: true });
+    }
+
+    function detectChangesAndNotify(oldDB, newDB) {
+      if (!oldDB || !newDB) return;
+      const oldOrderIds = new Set((oldDB.orders || []).map(o => String(o.id)));
+      const newOrders = (newDB.orders || []).filter(o => !oldOrderIds.has(String(o.id)));
+      if (newOrders.length > 0) {
+        const latestOrder = newOrders[0];
+        const buyer = (newDB.buyers && newDB.buyers[latestOrder.buyerId]) || { name: latestOrder.buyerName || "Customer" };
+        showSmartNotification(
+          `New Order from ${buyer.nickname || buyer.name}!`,
+          `📦 ${latestOrder.designTitle} — Qty: ${latestOrder.qty}`,
+          { type: "order", buyerId: latestOrder.buyerId }
+        );
+        return;
+      }
+
+      const oldBuyerIds = new Set(Object.keys(oldDB.buyers || {}));
+      const newBuyerIds = Object.keys(newDB.buyers || {}).filter(id => !oldBuyerIds.has(id));
+      if (newBuyerIds.length === 1) {
+        const nb = newDB.buyers[newBuyerIds[0]];
+        showSmartNotification(
+          `New Buyer Joined: ${nb.name}`,
+          `📍 Place: ${nb.place} • 📞 ${nb.phone}`,
+          { type: "chat", buyerId: nb.id }
+        );
+      }
+
+      const oldChats = oldDB.chats || {};
+      const newChats = newDB.chats || {};
+      for (const bId of Object.keys(newChats)) {
+        const oldList = oldChats[bId] || [];
+        const newList = newChats[bId] || [];
+        if (newList.length > oldList.length) {
+          const lastMsg = newList[newList.length - 1];
+          const buyer = (newDB.buyers && newDB.buyers[bId]) || { name: lastMsg.sender || "Customer" };
+          if (lastMsg.from !== "shop") {
+            showSmartNotification(
+              `Message from ${buyer.nickname || buyer.name}`,
+              `💬 "${lastMsg.text}"`,
+              { type: "chat", buyerId: bId }
+            );
+            return;
+          }
+        }
+      }
+    }
+
+    (function setupBulkModal() {
       const bulkBtn = document.createElement("button");
       bulkBtn.innerHTML = "📋 + Bulk Add Buyers";
       bulkBtn.style.cssText = "position:fixed;bottom:75px;right:20px;background:#68150f;color:#fff;border:2px solid #ffcc00;padding:12px 18px;border-radius:50px;font-weight:bold;font-size:13px;cursor:pointer;z-index:99998;box-shadow:0 6px 20px rgba(0,0,0,0.35);font-family:sans-serif;";
@@ -1216,8 +1149,8 @@
         document.getElementById("mpBulkCountBadge").innerText = parsedContacts.length + " Buyers Added";
 
         parsedContacts.forEach((c, i) => {
-          addBuyerToDatabase(c.name, c.phone, c.place, chosenCatKey);
-          const inv = buildInviteLinks(c.name, c.phone, c.place, chosenCatKey);
+          addOrUpdateBuyerInMemory(c.name, c.phone, c.place, chosenCatKey);
+          const inv = buildInviteLinks(c.name, c.phone, c.place);
           const row = document.createElement("div");
           row.style.cssText = "display:flex;justify-content:space-between;align-items:center;padding:8px 10px;border-bottom:1px solid #eee;background:#fff;border-radius:6px;margin-bottom:6px;";
           row.innerHTML = `
@@ -1238,7 +1171,7 @@
 
         selectedCatKey = chosenCatKey;
         renderShopView();
-        await saveAndSyncNow();
+        await saveDB();
 
         btn.innerText = "✅ ALL BUYERS SAVED TO CLOUD!";
         setTimeout(() => {
@@ -1248,16 +1181,9 @@
       });
     })();
 
-    if ("Notification" in window && Notification.permission === "default") {
-      document.addEventListener("click", function reqPerm() {
-        Notification.requestPermission();
-        document.removeEventListener("click", reqPerm);
-      }, { once: true });
-    }
-
     initShopApp();
-    pullFromCloudNow();
-    setInterval(pullFromCloudNow, 2000);
+    forceCloudPull();
+    setInterval(forceCloudPull, 2000);
   </script>
 </body>
 </html>
