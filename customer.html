@@ -28,7 +28,10 @@
       <div class="flex items-center gap-2.5">
         <div class="bg-white text-mp-maroon font-black text-lg px-2 py-0.5 rounded border-2 border-mp-orange shadow">MP</div>
         <div>
-          <h1 class="text-lg font-black uppercase leading-none">Mumbai Prints</h1>
+          <div class="flex items-center gap-2">
+            <h1 class="text-lg font-black uppercase leading-none">Mumbai Prints</h1>
+            <span id="custCloudBadge" class="text-[10px] bg-emerald-700 text-white font-bold px-2 py-0.5 rounded-full">🔄 Connecting...</span>
+          </div>
           <p class="text-[10px] text-orange-200 uppercase tracking-widest mt-0.5">QSP is our USP</p>
         </div>
       </div>
@@ -98,7 +101,6 @@
     </div>
   </nav>
 
-  <!-- CORE CUSTOMER LOGIC + REAL-TIME CLOUD SYNC -->
   <script>
     const FB_URL = "https://mumbai-prints-default-rtdb.firebaseio.com/mp_cloud_db_2026.json";
     const STORAGE_KEY = 'mumbai_prints_master_db_v1';
@@ -107,22 +109,21 @@
     const defaultDB = {
       folders: ['Ajrakh Print', 'DJ Material', '3D Print', 'DCM', '320 Cut', '3 Meter Cut'],
       categories: {
-        cat1: { id: 'cat1', name: 'Category 1', place: 'Ernakulam', buyerIds: ['b1'] },
-        cat2: { id: 'cat2', name: 'Category 2', place: 'Tamil Nadu', buyerIds: ['b2'] },
-        cat3: { id: 'cat3', name: 'Category 3', place: 'Kottayam', buyerIds: ['b3'] },
-        cat4: { id: 'cat4', name: 'Category 4', place: 'Alappuzha', buyerIds: ['b4'] },
+        cat1: { id: 'cat1', name: 'Category 1', place: 'Ernakulam', buyerIds: ['b_9847011223'] },
+        cat2: { id: 'cat2', name: 'Category 2', place: 'Tamil Nadu', buyerIds: ['b_9840055667'] },
+        cat3: { id: 'cat3', name: 'Category 3', place: 'Kottayam', buyerIds: ['b_9447088990'] },
+        cat4: { id: 'cat4', name: 'Category 4', place: 'Alappuzha', buyerIds: ['b_9446033441'] },
         catX: { id: 'catX', name: 'Category X', place: 'Other Places', buyerIds: [] }
       },
       buyers: {
-        b1: { id: 'b1', name: 'Kochi Fashion Hub', phone: '9847011223', place: 'Ernakulam', nickname: 'Salim (Kochi)', catKey: 'cat1', isFav: true }
+        b_9847011223: { id: 'b_9847011223', name: 'Kochi Fashion Hub', phone: '9847011223', place: 'Ernakulam', nickname: 'Salim (Kochi)', catKey: 'cat1', isFav: true }
       },
       chats: {
-        b1: [{ from: 'shop', sender: 'Mumbai Prints', text: 'Welcome to Mumbai Prints! Browse our folders and send your order quantities anytime.', time: '10:00 AM' }]
+        b_9847011223: [{ msgId: 'm_init_1', from: 'shop', sender: 'Mumbai Prints', text: 'Welcome to Mumbai Prints! Browse our folders and send your order quantities anytime.', time: '10:00 AM', ts: 1700000000000 }]
       },
       orders: [],
       designs: [
-        { id: 1, folder: 'Ajrakh Print', title: 'Ajrakh Pure Cotton #1', dateGroup: 'Today — 29 Oct 2026', targetCat: 'all', targetLabel: 'All Categories', img: 'https://images.unsplash.com/photo-1620799140408-edc6dcb6d633?auto=format&fit=crop&w=500&q=80', favBy: {} },
-        { id: 2, folder: 'DJ Material', title: 'DJ Material Gold Print #1', dateGroup: 'Today — 29 Oct 2026', targetCat: 'all', targetLabel: 'All Categories', img: 'https://images.unsplash.com/photo-1584917865442-de89df76afd3?auto=format&fit=crop&w=500&q=80', favBy: {} }
+        { id: 1, folder: 'Ajrakh Print', title: 'Ajrakh Pure Cotton #1', dateGroup: 'Today — 29 Oct 2026', targetCat: 'all', targetLabel: 'All Categories', img: 'https://images.unsplash.com/photo-1620799140408-edc6dcb6d633?auto=format&fit=crop&w=500&q=80', favBy: {} }
       ],
       aboutUs: {
         phone1: '8893173438',
@@ -138,39 +139,226 @@
     let activeCustTab = 'chat';
     let selectedCustFolder = (db.folders && db.folders[0]) || 'Ajrakh Print';
 
-    let isPulling = false;
-    let hasInitialCloudPullCompleted = false;
-    let lastSyncedDBString = localStorage.getItem(STORAGE_KEY) || "";
+    let cloudReady = false;
+    let isSyncing = false;
+    let lastCloudString = "";
 
-    function saveDB() {
-      const str = JSON.stringify(db);
-      localStorage.setItem(STORAGE_KEY, str);
-      pushToCloudNow();
+    // Canonical Buyer ID based on 10-digit phone number
+    function getCanonicalBuyerId(phone) {
+      const clean = String(phone || '').replace(/\D/g, '').slice(-10);
+      return clean.length === 10 ? ('b_' + clean) : ('b_' + Date.now());
     }
 
-    // 1. Setup Custom MP App Logo
-    (function setupAppLogo() {
-      try {
-        const canvas = document.createElement("canvas");
-        canvas.width = 192; canvas.height = 192;
-        const ctx = canvas.getContext("2d");
-        ctx.fillStyle = "#68150f";
-        ctx.beginPath(); ctx.roundRect(0, 0, 192, 192, 36); ctx.fill();
-        ctx.fillStyle = "#ffffff";
-        ctx.font = "bold 88px Arial, sans-serif";
-        ctx.textAlign = "center"; ctx.textBaseline = "middle";
-        ctx.fillText("MP", 96, 100);
-        const iconUrl = canvas.toDataURL("image/png");
-        const link = document.createElement("link");
-        link.rel = "icon"; link.type = "image/png"; link.href = iconUrl;
-        document.head.appendChild(link);
-        const appleLink = document.createElement("link");
-        appleLink.rel = "apple-touch-icon"; appleLink.href = iconUrl;
-        document.head.appendChild(appleLink);
-      } catch (e) {}
-    })();
+    function matchPlaceToCategoryInDB(placeStr, refDB) {
+      const target = refDB || db;
+      const p = (placeStr || '').trim().toLowerCase();
+      for (let key of Object.keys(target.categories || {})) {
+        if (key !== 'catX' && (target.categories[key].place || '').toLowerCase() === p) {
+          return key;
+        }
+      }
+      return target.categories['catX'] ? 'catX' : Object.keys(target.categories)[0];
+    }
 
-    // 2. Smart Notification Engine for Customer
+    function normalizeAndMigrateDB(targetDB) {
+      if (!targetDB || typeof targetDB !== 'object') return defaultDB;
+      if (!targetDB.categories) targetDB.categories = JSON.parse(JSON.stringify(defaultDB.categories));
+      if (!targetDB.buyers) targetDB.buyers = {};
+      if (!targetDB.chats) targetDB.chats = {};
+      if (!targetDB.orders) targetDB.orders = [];
+      if (!targetDB.folders || targetDB.folders.length === 0) targetDB.folders = [...defaultDB.folders];
+      if (!targetDB.designs) targetDB.designs = [];
+      if (!targetDB.aboutUs) targetDB.aboutUs = JSON.parse(JSON.stringify(defaultDB.aboutUs));
+
+      const idMap = {};
+      const newBuyers = {};
+      Object.values(targetDB.buyers).forEach(b => {
+        if (!b || !b.phone) return;
+        const cleanPhone = String(b.phone).replace(/\D/g, '').slice(-10);
+        if (cleanPhone.length !== 10) return;
+        const canonId = 'b_' + cleanPhone;
+        idMap[b.id] = canonId;
+        newBuyers[canonId] = Object.assign({}, newBuyers[canonId] || {}, b, { id: canonId, phone: cleanPhone });
+      });
+      targetDB.buyers = newBuyers;
+
+      const newChats = {};
+      Object.keys(targetDB.chats).forEach(oldId => {
+        const canonId = idMap[oldId] || oldId;
+        const list = targetDB.chats[oldId] || [];
+        if (!newChats[canonId]) newChats[canonId] = [];
+        const seen = new Set(newChats[canonId].map(m => m.msgId || (m.sender + '|' + m.text + '|' + m.time)));
+        list.forEach((m, idx) => {
+          if (!m.msgId) m.msgId = 'm_' + (m.ts || idx) + '_' + String(m.text).slice(0, 10);
+          const key = m.msgId || (m.sender + '|' + m.text + '|' + m.time);
+          if (!seen.has(key)) {
+            seen.add(key);
+            newChats[canonId].push(m);
+          }
+        });
+      });
+      targetDB.chats = newChats;
+
+      targetDB.orders.forEach(o => {
+        if (o.buyerId && idMap[o.buyerId]) o.buyerId = idMap[o.buyerId];
+        else if (o.buyerPhone) o.buyerId = getCanonicalBuyerId(o.buyerPhone);
+      });
+
+      Object.keys(targetDB.categories).forEach(k => {
+        targetDB.categories[k].buyerIds = [];
+      });
+      Object.values(targetDB.buyers).forEach(b => {
+        const catK = (b.catKey && targetDB.categories[b.catKey]) ? b.catKey : matchPlaceToCategoryInDB(b.place, targetDB);
+        b.catKey = catK;
+        if (!targetDB.categories[catK].buyerIds.includes(b.id)) {
+          targetDB.categories[catK].buyerIds.push(b.id);
+        }
+      });
+
+      return targetDB;
+    }
+
+    function mergeDatabases(localDB, cloudDB) {
+      const l = normalizeAndMigrateDB(JSON.parse(JSON.stringify(localDB || defaultDB)));
+      const c = normalizeAndMigrateDB(JSON.parse(JSON.stringify(cloudDB || defaultDB)));
+      const merged = JSON.parse(JSON.stringify(c));
+
+      merged.folders = Array.from(new Set([...(c.folders || []), ...(l.folders || [])]));
+      merged.categories = Object.assign({}, l.categories, c.categories);
+
+      merged.buyers = Object.assign({}, l.buyers, c.buyers);
+      Object.keys(l.buyers || {}).forEach(id => {
+        if (c.buyers && c.buyers[id]) {
+          merged.buyers[id] = Object.assign({}, c.buyers[id], l.buyers[id]);
+          if (c.buyers[id].nickname && !l.buyers[id].nickname) merged.buyers[id].nickname = c.buyers[id].nickname;
+        }
+      });
+
+      merged.chats = {};
+      const allChatBuyerIds = new Set([...Object.keys(l.chats || {}), ...Object.keys(c.chats || {})]);
+      allChatBuyerIds.forEach(bId => {
+        const combined = [...(c.chats?.[bId] || []), ...(l.chats?.[bId] || [])];
+        const uniqueMap = new Map();
+        combined.forEach((m, idx) => {
+          const key = m.msgId || `${m.from}_${m.sender}_${m.text}_${m.time}`;
+          if (!uniqueMap.has(key)) uniqueMap.set(key, m);
+        });
+        const arr = Array.from(uniqueMap.values());
+        arr.sort((a, b) => (a.ts || 0) - (b.ts || 0));
+        merged.chats[bId] = arr;
+      });
+
+      const orderMap = new Map();
+      [...(c.orders || []), ...(l.orders || [])].forEach(o => {
+        if (o && o.id) orderMap.set(String(o.id), o);
+      });
+      merged.orders = Array.from(orderMap.values()).sort((a, b) => (b.ts || 0) - (a.ts || 0));
+
+      const designMap = new Map();
+      [...(c.designs || []), ...(l.designs || [])].forEach(d => {
+        if (d && d.id) {
+          const existing = designMap.get(String(d.id));
+          if (existing) d.favBy = Object.assign({}, existing.favBy || {}, d.favBy || {});
+          designMap.set(String(d.id), d);
+        }
+      });
+      merged.designs = Array.from(designMap.values());
+
+      return normalizeAndMigrateDB(merged);
+    }
+
+    function setCustSyncBadge(text, bg) {
+      const b = document.getElementById('custCloudBadge');
+      if (b) {
+        b.innerText = text;
+        b.className = `text-[10px] ${bg} text-white font-bold px-2 py-0.5 rounded-full`;
+      }
+    }
+
+    async function saveDB() {
+      db = normalizeAndMigrateDB(db);
+      try { localStorage.setItem(STORAGE_KEY, JSON.stringify(db)); } catch (e) {}
+      await pushToCloudSafe();
+    }
+
+    async function pushToCloudSafe() {
+      if (isSyncing) return;
+      isSyncing = true;
+      setCustSyncBadge('⬆️ Sending...', 'bg-amber-600');
+      try {
+        const res = await fetch(FB_URL + "?t=" + Date.now(), { cache: "no-store" });
+        if (res.ok) {
+          const cloudWrapper = await res.json();
+          if (cloudWrapper && cloudWrapper[STORAGE_KEY]) {
+            const cloudDB = JSON.parse(cloudWrapper[STORAGE_KEY]);
+            db = mergeDatabases(db, cloudDB);
+          }
+        }
+        const finalStr = JSON.stringify(db);
+        try { localStorage.setItem(STORAGE_KEY, finalStr); } catch (e) {}
+        lastCloudString = finalStr;
+
+        await fetch(FB_URL, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ [STORAGE_KEY]: finalStr, updatedAt: Date.now() })
+        });
+        setCustSyncBadge('🟢 Online', 'bg-emerald-700');
+      } catch (e) {
+        setCustSyncBadge('⚠️ Offline', 'bg-red-700');
+      }
+      isSyncing = false;
+    }
+
+    async function forceCloudPull() {
+      if (isSyncing) return;
+      isSyncing = true;
+      try {
+        const res = await fetch(FB_URL + "?t=" + Date.now(), { cache: "no-store" });
+        if (res.ok) {
+          const cloudWrapper = await res.json();
+          if (cloudWrapper && cloudWrapper[STORAGE_KEY]) {
+            const cloudStr = cloudWrapper[STORAGE_KEY];
+            if (cloudStr !== lastCloudString || !cloudReady) {
+              const oldDB = JSON.parse(JSON.stringify(db));
+              const cloudDB = JSON.parse(cloudStr);
+              db = mergeDatabases(db, cloudDB);
+              const mergedStr = JSON.stringify(db);
+              try { localStorage.setItem(STORAGE_KEY, mergedStr); } catch (e) {}
+
+              if (cloudReady && currentCustomer) {
+                const myId = getCanonicalBuyerId(currentCustomer.phone);
+                const oldMyChats = (oldDB.chats && oldDB.chats[myId]) || [];
+                const newMyChats = (db.chats && db.chats[myId]) || [];
+                if (newMyChats.length > oldMyChats.length) {
+                  const lastMsg = newMyChats[newMyChats.length - 1];
+                  if (lastMsg.from === "shop") {
+                    showCustomerNotification("New Reply from Mumbai Prints", `💬 "${lastMsg.text}"`, "chat");
+                  }
+                } else if ((db.designs || []).length > (oldDB.designs || []).length) {
+                  showCustomerNotification("New Designs Uploaded!", "✨ Tap here to check out the latest textile collection.", "folders");
+                }
+              }
+
+              lastCloudString = mergedStr;
+
+              const activeEl = document.activeElement;
+              const isTyping = activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA' || activeEl.tagName === 'SELECT');
+              if (!isTyping && currentCustomer) {
+                renderCustomerTab();
+              }
+            }
+          }
+        }
+        cloudReady = true;
+        setCustSyncBadge('🟢 Online', 'bg-emerald-700');
+      } catch (e) {
+        cloudReady = true;
+        setCustSyncBadge('⚠️ Retry', 'bg-red-700');
+      }
+      isSyncing = false;
+    }
+
     function playNotificationSound() {
       try {
         const AudioCtx = window.AudioContext || window.webkitAudioContext;
@@ -221,183 +409,80 @@
       }, { once: true });
     }
 
-    // 3. Smart Database Merge & Cloud Sync
-    function mergeDatabases(localDB, cloudDB) {
-      if (!localDB) return cloudDB;
-      if (!cloudDB) return localDB;
-      const merged = JSON.parse(JSON.stringify(cloudDB));
-
-      merged.buyers = Object.assign({}, localDB.buyers || {}, cloudDB.buyers || {});
-      merged.categories = Object.assign({}, localDB.categories || {}, cloudDB.categories || {});
-      Object.keys(merged.categories).forEach(catKey => {
-        const cIds = cloudDB.categories?.[catKey]?.buyerIds || [];
-        const lIds = localDB.categories?.[catKey]?.buyerIds || [];
-        merged.categories[catKey].buyerIds = Array.from(new Set([...cIds, ...lIds]));
-      });
-
-      Object.values(merged.buyers).forEach(b => {
-        if (b && b.id && b.catKey && merged.categories[b.catKey]) {
-          if (!merged.categories[b.catKey].buyerIds.includes(b.id)) {
-            merged.categories[b.catKey].buyerIds.unshift(b.id);
-          }
-        }
-      });
-
-      const orderMap = new Map();
-      [...(cloudDB.orders || []), ...(localDB.orders || [])].forEach(o => {
-        if (o && o.id) orderMap.set(String(o.id), o);
-      });
-      merged.orders = Array.from(orderMap.values());
-
-      merged.chats = Object.assign({}, localDB.chats || {}, cloudDB.chats || {});
-      Object.keys(merged.chats).forEach(bId => {
-        const lChats = localDB.chats?.[bId] || [];
-        const cChats = cloudDB.chats?.[bId] || [];
-        merged.chats[bId] = cChats.length >= lChats.length ? cChats : lChats;
-      });
-
-      return merged;
-    }
-
-    async function pushToCloudNow() {
-      if (isPulling || !hasInitialCloudPullCompleted) return;
-      try {
-        const currentRaw = localStorage.getItem(STORAGE_KEY);
-        if (!currentRaw || currentRaw === lastSyncedDBString) return;
-        lastSyncedDBString = currentRaw;
-        await fetch(FB_URL, {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ [STORAGE_KEY]: currentRaw })
-        });
-      } catch (e) {}
-    }
-
-    async function pullFromCloudNow() {
-      try {
-        const res = await fetch(FB_URL + "?t=" + Date.now(), { cache: "no-store" });
-        if (!res.ok) {
-          hasInitialCloudPullCompleted = true;
-          return;
-        }
-        const cloudWrapper = await res.json();
-        hasInitialCloudPullCompleted = true;
-
-        if (!cloudWrapper || !cloudWrapper[STORAGE_KEY]) {
-          await pushToCloudNow();
-          return;
-        }
-
-        const cloudDBStr = cloudWrapper[STORAGE_KEY];
-        if (cloudDBStr === lastSyncedDBString) return;
-
-        isPulling = true;
-        const oldDB = lastSyncedDBString ? JSON.parse(lastSyncedDBString) : null;
-        const cloudDB = JSON.parse(cloudDBStr);
-        const mergedDB = mergeDatabases(oldDB, cloudDB);
-        const mergedStr = JSON.stringify(mergedDB);
-
-        // Check if Mumbai Prints sent a reply or uploaded new designs for this customer
-        if (oldDB && currentCustomer && currentCustomer.id) {
-          const myId = currentCustomer.id;
-          const oldMyChats = (oldDB.chats && oldDB.chats[myId]) || [];
-          const newMyChats = (mergedDB.chats && mergedDB.chats[myId]) || [];
-          if (newMyChats.length > oldMyChats.length) {
-            const lastMsg = newMyChats[newMyChats.length - 1];
-            if (lastMsg.from === "shop") {
-              showCustomerNotification("New Reply from Mumbai Prints", `💬 "${lastMsg.text}"`, "chat");
-            }
-          } else if ((mergedDB.designs || []).length > (oldDB.designs || []).length) {
-            showCustomerNotification("New Designs Uploaded!", "✨ Tap here to check out the latest textile collection.", "folders");
-          }
-        }
-
-        lastSyncedDBString = mergedStr;
-        localStorage.setItem(STORAGE_KEY, mergedStr);
-        db = mergedDB;
-
-        // Re-link session if customer was pre-added by Shop/Admin via phone number
-        if (currentCustomer && currentCustomer.phone) {
-          const cleanPhone = currentCustomer.phone.replace(/\D/g, '').slice(-10);
-          const matchedBuyer = Object.values(db.buyers || {}).find(
-            b => (b.phone || '').replace(/\D/g, '').slice(-10) === cleanPhone
-          );
-          if (matchedBuyer) {
-            currentCustomer = matchedBuyer;
-            localStorage.setItem(CUST_SESSION_KEY, JSON.stringify(currentCustomer));
-          }
-        }
-
-        const activeEl = document.activeElement;
-        const isTyping = activeEl && (activeEl.tagName === "INPUT" || activeEl.tagName === "TEXTAREA" || activeEl.tagName === "SELECT");
-        if (!isTyping && currentCustomer && db.buyers[currentCustomer.id]) {
-          renderCustomerTab();
-        }
-        isPulling = false;
-      } catch (e) {
-        hasInitialCloudPullCompleted = true;
-        isPulling = false;
-      }
-    }
-
-    // 4. Invite Link & Customer Registration Logic
     function toggleCustomPlaceInput() {
       const sel = document.getElementById('joinCustPlaceSelect').value;
       document.getElementById('joinCustPlaceCustom').classList.toggle('hidden', sel !== 'OTHER_CUSTOM');
     }
 
-    function checkInviteUrlParams() {
-      const params = new URLSearchParams(window.location.search);
-      const name = params.get('name') || '';
-      const phone = params.get('phone') || '';
-      const place = params.get('place') || '';
-
-      if (name || phone) {
-        if (name) document.getElementById('joinCustName').value = name;
-        if (phone) document.getElementById('joinCustPhone').value = phone.replace(/\D/g, '').slice(-10);
-        if (place) {
-          const mainPlaces = ['Ernakulam', 'Tamil Nadu', 'Kottayam', 'Alappuzha'];
-          const match = mainPlaces.find(p => p.toLowerCase() === place.toLowerCase());
-          if (match) {
-            document.getElementById('joinCustPlaceSelect').value = match;
-          } else {
-            document.getElementById('joinCustPlaceSelect').value = 'OTHER_CUSTOM';
-            document.getElementById('joinCustPlaceCustom').classList.remove('hidden');
-            document.getElementById('joinCustPlaceCustom').value = place;
-          }
-        }
-
-        // If buyer is already in DB from Admin/Shop invite, log them in automatically!
-        const cleanPhone = phone.replace(/\D/g, '').slice(-10);
-        if (cleanPhone.length === 10) {
-          const existing = Object.values(db.buyers || {}).find(
-            b => (b.phone || '').replace(/\D/g, '').slice(-10) === cleanPhone
-          );
-          if (existing) {
-            currentCustomer = existing;
-            localStorage.setItem(CUST_SESSION_KEY, JSON.stringify(currentCustomer));
-          }
-        }
-      }
-    }
-
     async function initCustomerApp() {
-      // First pull fresh cloud data so pre-added buyers from Admin/Shop are recognized immediately
-      await pullFromCloudNow();
-      checkInviteUrlParams();
+      await forceCloudPull();
 
-      if (currentCustomer && currentCustomer.phone) {
-        const cleanPhone = currentCustomer.phone.replace(/\D/g, '').slice(-10);
-        const existing = Object.values(db.buyers || {}).find(
-          b => (b.phone || '').replace(/\D/g, '').slice(-10) === cleanPhone
-        );
-        if (existing) {
-          currentCustomer = existing;
-          localStorage.setItem(CUST_SESSION_KEY, JSON.stringify(currentCustomer));
+      const params = new URLSearchParams(window.location.search);
+      const urlName = (params.get('name') || '').trim();
+      const urlPhone = (params.get('phone') || '').replace(/\D/g, '').slice(-10);
+      const urlPlace = (params.get('place') || '').trim();
+
+      if (urlName) document.getElementById('joinCustName').value = urlName;
+      if (urlPhone) document.getElementById('joinCustPhone').value = urlPhone;
+      if (urlPlace) {
+        const mainPlaces = ['Ernakulam', 'Tamil Nadu', 'Kottayam', 'Alappuzha'];
+        const match = mainPlaces.find(p => p.toLowerCase() === urlPlace.toLowerCase());
+        if (match) {
+          document.getElementById('joinCustPlaceSelect').value = match;
+        } else {
+          document.getElementById('joinCustPlaceSelect').value = 'OTHER_CUSTOM';
+          document.getElementById('joinCustPlaceCustom').classList.remove('hidden');
+          document.getElementById('joinCustPlaceCustom').value = urlPlace;
         }
       }
 
-      if (currentCustomer && db.buyers[currentCustomer.id]) {
+      // Auto-register & auto-login if URL has a valid 10-digit phone number!
+      if (urlPhone.length === 10) {
+        const canonId = getCanonicalBuyerId(urlPhone);
+        const existing = db.buyers[canonId];
+        const finalName = urlName || (existing && existing.name) || 'Valued Partner';
+        const finalPlace = urlPlace || (existing && existing.place) || 'Ernakulam';
+        const catK = (existing && existing.catKey) || matchPlaceToCategoryInDB(finalPlace, db);
+
+        db.buyers[canonId] = {
+          id: canonId,
+          name: finalName,
+          phone: urlPhone,
+          place: finalPlace,
+          nickname: (existing && existing.nickname) || '',
+          catKey: catK,
+          isFav: (existing && existing.isFav) || false
+        };
+        if (!db.chats[canonId] || db.chats[canonId].length === 0) {
+          db.chats[canonId] = [{
+            msgId: 'm_welcome_' + urlPhone,
+            from: 'shop',
+            sender: 'Mumbai Prints',
+            text: `Welcome ${finalName} to the Mumbai Prints Exclusive Digital Catalog!`,
+            time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            ts: Date.now()
+          }];
+        }
+        currentCustomer = db.buyers[canonId];
+        localStorage.setItem(CUST_SESSION_KEY, JSON.stringify(currentCustomer));
+        await saveDB();
+      }
+
+      // Ensure existing session uses canonical phone ID
+      if (currentCustomer && currentCustomer.phone) {
+        const cleanPhone = String(currentCustomer.phone).replace(/\D/g, '').slice(-10);
+        const canonId = getCanonicalBuyerId(cleanPhone);
+        currentCustomer.id = canonId;
+        if (!db.buyers[canonId]) {
+          db.buyers[canonId] = currentCustomer;
+          await saveDB();
+        } else {
+          currentCustomer = db.buyers[canonId];
+        }
+        localStorage.setItem(CUST_SESSION_KEY, JSON.stringify(currentCustomer));
+      }
+
+      if (currentCustomer && currentCustomer.id && db.buyers[currentCustomer.id]) {
         document.getElementById('customerJoinSection').classList.add('hidden');
         document.getElementById('customerMainWorkspace').classList.remove('hidden');
         document.getElementById('customerBottomNav').classList.remove('hidden');
@@ -424,51 +509,39 @@
       }
 
       const btn = document.getElementById('joinNowBtn');
-      if (btn) { btn.innerText = 'Connecting...'; btn.disabled = true; }
+      if (btn) { btn.innerText = 'Joining & Syncing...'; btn.disabled = true; }
 
-      await pullFromCloudNow();
+      await forceCloudPull();
 
-      // Check if buyer with this 10-digit phone already exists
-      let existingBuyer = Object.values(db.buyers || {}).find(
-        b => (b.phone || '').replace(/\D/g, '').slice(-10) === phone
-      );
+      const canonId = getCanonicalBuyerId(phone);
+      const existing = db.buyers[canonId];
+      const matchedCatKey = (existing && existing.catKey) || matchPlaceToCategoryInDB(place, db);
 
-      if (!existingBuyer) {
-        let matchedCatKey = 'catX';
-        Object.keys(db.categories || {}).forEach(k => {
-          if (k !== 'catX' && db.categories[k].place.toLowerCase() === place.toLowerCase()) {
-            matchedCatKey = k;
-          }
-        });
-        if (!db.categories[matchedCatKey]) matchedCatKey = Object.keys(db.categories)[0] || 'cat1';
+      db.buyers[canonId] = {
+        id: canonId,
+        name: name,
+        phone: phone,
+        place: place,
+        nickname: (existing && existing.nickname) || '',
+        catKey: matchedCatKey,
+        isFav: (existing && existing.isFav) || false
+      };
 
-        const newId = 'b_' + Date.now() + '_' + Math.floor(Math.random() * 1000);
-        existingBuyer = { id: newId, name, phone, place, nickname: '', catKey: matchedCatKey, isFav: false };
-        db.buyers[newId] = existingBuyer;
-        if (!db.categories[matchedCatKey].buyerIds) db.categories[matchedCatKey].buyerIds = [];
-        db.categories[matchedCatKey].buyerIds.unshift(newId);
-
-        if (!db.chats) db.chats = {};
-        db.chats[newId] = [
-          {
-            from: 'shop',
-            sender: 'Mumbai Prints',
-            text: `Welcome ${name} to the Mumbai Prints Exclusive Digital Catalog! You can chat with us here or browse folders to place orders.`,
-            time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-          }
-        ];
-        saveDB();
-      } else {
-        // Ensure existing buyer is listed in their category
-        const catK = existingBuyer.catKey || 'cat1';
-        if (db.categories[catK] && !db.categories[catK].buyerIds.includes(existingBuyer.id)) {
-          db.categories[catK].buyerIds.unshift(existingBuyer.id);
-          saveDB();
-        }
+      if (!db.chats[canonId] || db.chats[canonId].length === 0) {
+        db.chats[canonId] = [{
+          msgId: 'm_welcome_' + phone,
+          from: 'shop',
+          sender: 'Mumbai Prints',
+          text: `Welcome ${name} to the Mumbai Prints Exclusive Digital Catalog! You can chat with us here or browse folders to place orders.`,
+          time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          ts: Date.now()
+        }];
       }
 
-      currentCustomer = existingBuyer;
+      currentCustomer = db.buyers[canonId];
       localStorage.setItem(CUST_SESSION_KEY, JSON.stringify(currentCustomer));
+      await saveDB();
+
       if (btn) { btn.innerText = 'Join Now →'; btn.disabled = false; }
 
       document.getElementById('customerJoinSection').classList.add('hidden');
@@ -490,18 +563,18 @@
     }
 
     function renderCustomerTab() {
-      db = JSON.parse(localStorage.getItem(STORAGE_KEY)) || db;
+      db = normalizeAndMigrateDB(db);
       const box = document.getElementById('customerMainWorkspace');
       if (!box || !currentCustomer) return;
       box.innerHTML = '';
-      const custId = currentCustomer.id;
+      const custId = getCanonicalBuyerId(currentCustomer.phone);
+      currentCustomer.id = custId;
       const b = db.buyers[custId] || currentCustomer;
 
       if (!db.folders.includes(selectedCustFolder)) {
         selectedCustFolder = db.folders[0] || 'Ajrakh Print';
       }
 
-      // TAB 1: DIRECT 1-ON-1 CHAT WITH MUMBAI PRINTS
       if (activeCustTab === 'chat') {
         const msgs = (db.chats && db.chats[custId]) || [];
         let msgHtml = msgs.map(m => {
@@ -522,7 +595,7 @@
             <div class="bg-mp-maroon text-white p-3 flex justify-between items-center border-b-2 border-mp-orange">
               <div>
                 <h2 class="font-bold text-sm">💬 Mumbai Prints Official Support</h2>
-                <p class="text-[10px] text-orange-200">Logged in as: ${b.name} (${b.place})</p>
+                <p class="text-[10px] text-orange-200">Logged in as: ${b.name} (${b.phone})</p>
               </div>
               <button onclick="switchCustomerTab('folders')" class="bg-mp-orange text-white text-[11px] font-bold px-2.5 py-1 rounded-lg">📂 View Fabrics</button>
             </div>
@@ -536,8 +609,6 @@
         const cb = document.getElementById('custChatBox');
         if (cb) cb.scrollTop = cb.scrollHeight;
       }
-
-      // TAB 2: FOLDERS & DESIGNS FEED
       else if (activeCustTab === 'folders') {
         let folderButtons = (db.folders || []).map(f => `
           <button onclick="selectedCustFolder='${f}'; renderCustomerTab();" class="px-3.5 py-2 rounded-xl text-xs font-bold shrink-0 transition ${
@@ -588,8 +659,6 @@
           </div>
         `;
       }
-
-      // TAB 3: FAVORITE ITEMS
       else if (activeCustTab === 'favorites') {
         const favDesigns = (db.designs || []).filter(d => d.favBy && d.favBy[custId]);
         let favHtml = favDesigns.length === 0
@@ -620,8 +689,6 @@
           </div>
         `;
       }
-
-      // TAB 4: ABOUT US
       else if (activeCustTab === 'about') {
         const a = db.aboutUs || defaultDB.aboutUs;
         box.innerHTML = `
@@ -664,37 +731,42 @@
       }
     }
 
-    function sendCustChatMessage() {
+    async function sendCustChatMessage() {
       const input = document.getElementById('custChatInput');
       const text = input ? input.value.trim() : '';
       if (!text || !currentCustomer) return;
-      const custId = currentCustomer.id;
+      const custId = getCanonicalBuyerId(currentCustomer.phone);
+      currentCustomer.id = custId;
       const b = db.buyers[custId] || currentCustomer;
+      db.buyers[custId] = b;
 
       if (!db.chats) db.chats = {};
       if (!db.chats[custId]) db.chats[custId] = [];
+      const now = Date.now();
       db.chats[custId].push({
+        msgId: 'm_' + now + '_' + Math.floor(Math.random() * 1000),
         from: 'cust',
         sender: b.name,
         text,
-        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        ts: now
       });
       input.value = '';
-      saveDB();
       renderCustomerTab();
+      await saveDB();
     }
 
-    function toggleCustFavoriteDesign(designId) {
+    async function toggleCustFavoriteDesign(designId) {
       const d = (db.designs || []).find(x => x.id === designId);
       if (!d || !currentCustomer) return;
       if (!d.favBy) d.favBy = {};
-      const custId = currentCustomer.id;
+      const custId = getCanonicalBuyerId(currentCustomer.phone);
       d.favBy[custId] = !d.favBy[custId];
-      saveDB();
       renderCustomerTab();
+      await saveDB();
     }
 
-    function placeCustomerOrder(designId) {
+    async function placeCustomerOrder(designId) {
       const input = document.getElementById('qty_' + designId);
       const qty = input ? input.value.trim() : '';
       if (!qty) {
@@ -704,31 +776,30 @@
       const d = (db.designs || []).find(x => x.id === designId);
       if (!d || !currentCustomer) return;
 
-      const custId = currentCustomer.id;
+      const custId = getCanonicalBuyerId(currentCustomer.phone);
+      currentCustomer.id = custId;
       const b = db.buyers[custId] || currentCustomer;
+      db.buyers[custId] = b;
+
+      const now = Date.now();
       const nowStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
-      // Ensure buyer exists in db.buyers so Admin/Shop always see their name & place
-      if (!db.buyers[custId]) {
-        db.buyers[custId] = b;
-      }
-
-      // 1. Add to customer's 1-on-1 chat with image preview
       if (!db.chats) db.chats = {};
       if (!db.chats[custId]) db.chats[custId] = [];
       db.chats[custId].push({
+        msgId: 'm_ord_' + now,
         from: 'cust',
         sender: b.name,
-        text: `Order Quantity: ${qty}`,
+        text: `📦 Order Placed — Qty: ${qty}`,
         productImg: d.img,
         productTitle: d.title,
-        time: nowStr
+        time: nowStr,
+        ts: now
       });
 
-      // 2. Add to All Categories Order List (Newest First, with Buyer Name & Place backup)
       if (!db.orders) db.orders = [];
       db.orders.unshift({
-        id: 'ord_' + Date.now() + '_' + Math.floor(Math.random() * 1000),
+        id: 'ord_' + now + '_' + Math.floor(Math.random() * 1000),
         buyerId: custId,
         buyerName: b.name,
         buyerPhone: b.phone,
@@ -737,21 +808,21 @@
         designTitle: d.title,
         img: d.img,
         qty: qty,
-        time: `Today, ${nowStr}`
+        time: `Today, ${nowStr}`,
+        ts: now
       });
 
-      saveDB();
-      alert(`✅ Order for "${d.title}" (${qty}) sent to Mumbai Prints!`);
       switchCustomerTab('chat');
+      await saveDB();
+      alert(`✅ Order for "${d.title}" (${qty}) sent to Mumbai Prints!`);
     }
 
     function showAddToHomeScreenGuide() {
       alert('📲 Add Mumbai Prints to your Phone Home Screen:\n\n• On Android (Chrome): Tap the 3 dots (⋮) at top-right → Tap "Add to Home screen" or "Install app".\n• On iPhone (Safari): Tap the Share icon (⬆️) at bottom → Scroll down and tap "Add to Home Screen".\n\nIt will open like a full-screen native app without any browser bar!');
     }
 
-    // Initialize App & Start 2-Second Real-Time Sync
     initCustomerApp();
-    setInterval(pullFromCloudNow, 2000);
+    setInterval(forceCloudPull, 2000);
   </script>
 </body>
 </html>
