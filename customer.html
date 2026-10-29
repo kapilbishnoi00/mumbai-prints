@@ -7,7 +7,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="theme-color" content="#68150f">
-  <title>Mumbai Prints</title>
+  <title>Mumbai Prints - Customer Catalog</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
     :root { --mp-maroon: #68150f; --mp-maroon-dark: #4e0e09; --mp-orange: #eb4d26; --mp-bg: #fdf8f6; }
@@ -43,7 +43,7 @@
     <div class="bg-white rounded-2xl shadow-xl border-2 border-orange-200 overflow-hidden">
       <div class="bg-mp-maroon text-white p-5 text-center border-b-4 border-mp-orange">
         <div class="w-12 h-12 bg-white text-mp-maroon font-black text-xl rounded-xl mx-auto flex items-center justify-center border-2 border-mp-orange mb-2">MP</div>
-        <h2 class="text-lg font-black uppercase">Mumbai Prints Gold Customer Family</h2>
+        <h2 class="text-lg font-black uppercase">Mumbai Prints Exclusive Catalog</h2>
         <p class="text-xs text-orange-200 mt-0.5">One-time registration • Direct wholesale access</p>
       </div>
       <div class="p-5 space-y-4 text-xs">
@@ -52,7 +52,7 @@
           <input type="text" id="joinCustName" placeholder="XYZ Textile" class="w-full border-2 border-slate-200 rounded-lg p-2.5 text-sm focus:outline-none focus:border-mp-orange">
         </div>
         <div>
-          <label class="block font-bold text-slate-700 uppercase mb-1">2. Mobile Number *</label>
+          <label class="block font-bold text-slate-700 uppercase mb-1">2. Mobile Number (10 Digits) *</label>
           <input type="tel" id="joinCustPhone" placeholder="8893173438" class="w-full border-2 border-slate-200 rounded-lg p-2.5 text-sm focus:outline-none focus:border-mp-orange">
         </div>
         <div>
@@ -64,9 +64,9 @@
             <option value="Alappuzha">Alappuzha</option>
             <option value="OTHER_CUSTOM">Other Place / City...</option>
           </select>
-          <input type="text" id="joinCustPlaceCustom" placeholder="Enter your city name (Auto-routes to Category X)" class="hidden mt-2 w-full border-2 border-orange-300 rounded-lg p-2.5 text-sm">
+          <input type="text" id="joinCustPlaceCustom" placeholder="Enter your city name" class="hidden mt-2 w-full border-2 border-orange-300 rounded-lg p-2.5 text-sm">
         </div>
-        <button onclick="submitCustomerJoinNow()" class="w-full bg-mp-maroon hover:bg-mp-maroon-dark text-white font-black py-3.5 rounded-xl shadow-md text-sm uppercase tracking-wider">
+        <button id="joinNowBtn" onclick="submitCustomerJoinNow()" class="w-full bg-mp-maroon hover:bg-mp-maroon-dark text-white font-black py-3.5 rounded-xl shadow-md text-sm uppercase tracking-wider">
           Join Now →
         </button>
       </div>
@@ -98,48 +98,249 @@
     </div>
   </nav>
 
+  <!-- CORE CUSTOMER LOGIC + REAL-TIME CLOUD SYNC -->
   <script>
+    const FB_URL = "https://mumbai-prints-default-rtdb.firebaseio.com/mp_cloud_db_2026.json";
     const STORAGE_KEY = 'mumbai_prints_master_db_v1';
     const CUST_SESSION_KEY = 'mp_logged_in_customer_v1';
 
-    let db = JSON.parse(localStorage.getItem(STORAGE_KEY));
-    if(!db) {
-      db = {
-        folders: ['Ajrakh Print', 'DJ Material', '3D Print', 'DCM', '320 Cut', '3 Meter Cut'],
-        categories: {
-          cat1: { id: 'cat1', name: 'Category 1', place: 'Ernakulam', buyerIds: ['b1'] },
-          cat2: { id: 'cat2', name: 'Category 2', place: 'Tamil Nadu', buyerIds: ['b2'] },
-          cat3: { id: 'cat3', name: 'Category 3', place: 'Kottayam', buyerIds: ['b3'] },
-          cat4: { id: 'cat4', name: 'Category 4', place: 'Alappuzha', buyerIds: ['b4'] },
-          catX: { id: 'catX', name: 'Category X', place: 'Other Places', buyerIds: [] }
-        },
-        buyers: {
-          b1: { id: 'b1', name: 'Kochi Fashion Hub', phone: '9847011223', place: 'Ernakulam', nickname: 'Salim (Kochi)', catKey: 'cat1', isFav: true }
-        },
-        chats: {
-          b1: [{ from: 'shop', sender: 'Mumbai Prints', text: 'Welcome to Mumbai Prints! Browse our folders and send your order quantities anytime.', time: '10:00 AM' }]
-        },
-        orders: [],
-        designs: [
-          { id: 1, folder: 'Ajrakh Print', title: 'Ajrakh Pure Cotton #1', dateGroup: 'Today — 28 Oct 2026', targetCat: 'all', targetLabel: 'All Categories', img: 'https://images.unsplash.com/photo-1620799140408-edc6dcb6d633?auto=format&fit=crop&w=500&q=80', favBy: {} },
-          { id: 2, folder: 'DJ Material', title: 'DJ Material Gold Print #1', dateGroup: 'Today — 28 Oct 2026', targetCat: 'all', targetLabel: 'All Categories', img: 'https://images.unsplash.com/photo-1584917865442-de89df76afd3?auto=format&fit=crop&w=500&q=80', favBy: {} }
-        ],
-        aboutUs: {
-          phone1: '8893173438',
-          phone2: '',
-          email: 'mumbaiprint18@gmail.com',
-          instagram: 'https://instagram.com/mumbaiprints',
-          message: 'Thank you so much for showing your trust in us. We will always stand by your side to support you. Thank you so much!'
-        }
-      };
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(db));
-    }
-    function saveDB() { localStorage.setItem(STORAGE_KEY, JSON.stringify(db)); }
+    const defaultDB = {
+      folders: ['Ajrakh Print', 'DJ Material', '3D Print', 'DCM', '320 Cut', '3 Meter Cut'],
+      categories: {
+        cat1: { id: 'cat1', name: 'Category 1', place: 'Ernakulam', buyerIds: ['b1'] },
+        cat2: { id: 'cat2', name: 'Category 2', place: 'Tamil Nadu', buyerIds: ['b2'] },
+        cat3: { id: 'cat3', name: 'Category 3', place: 'Kottayam', buyerIds: ['b3'] },
+        cat4: { id: 'cat4', name: 'Category 4', place: 'Alappuzha', buyerIds: ['b4'] },
+        catX: { id: 'catX', name: 'Category X', place: 'Other Places', buyerIds: [] }
+      },
+      buyers: {
+        b1: { id: 'b1', name: 'Kochi Fashion Hub', phone: '9847011223', place: 'Ernakulam', nickname: 'Salim (Kochi)', catKey: 'cat1', isFav: true }
+      },
+      chats: {
+        b1: [{ from: 'shop', sender: 'Mumbai Prints', text: 'Welcome to Mumbai Prints! Browse our folders and send your order quantities anytime.', time: '10:00 AM' }]
+      },
+      orders: [],
+      designs: [
+        { id: 1, folder: 'Ajrakh Print', title: 'Ajrakh Pure Cotton #1', dateGroup: 'Today — 29 Oct 2026', targetCat: 'all', targetLabel: 'All Categories', img: 'https://images.unsplash.com/photo-1620799140408-edc6dcb6d633?auto=format&fit=crop&w=500&q=80', favBy: {} },
+        { id: 2, folder: 'DJ Material', title: 'DJ Material Gold Print #1', dateGroup: 'Today — 29 Oct 2026', targetCat: 'all', targetLabel: 'All Categories', img: 'https://images.unsplash.com/photo-1584917865442-de89df76afd3?auto=format&fit=crop&w=500&q=80', favBy: {} }
+      ],
+      aboutUs: {
+        phone1: '8893173438',
+        phone2: '',
+        email: 'mumbaiprint18@gmail.com',
+        instagram: 'https://instagram.com/mumbaiprints',
+        message: 'Thank you so much for showing your trust in us. We will always stand by your side to support you. Thank you so much!'
+      }
+    };
 
+    let db = JSON.parse(localStorage.getItem(STORAGE_KEY)) || defaultDB;
     let currentCustomer = JSON.parse(localStorage.getItem(CUST_SESSION_KEY)) || null;
-    let activeCustTab = 'chat'; // 'chat' | 'folders' | 'favorites' | 'about'
-    let selectedCustFolder = db.folders[0] || 'Ajrakh Print';
+    let activeCustTab = 'chat';
+    let selectedCustFolder = (db.folders && db.folders[0]) || 'Ajrakh Print';
 
+    let isPulling = false;
+    let hasInitialCloudPullCompleted = false;
+    let lastSyncedDBString = localStorage.getItem(STORAGE_KEY) || "";
+
+    function saveDB() {
+      const str = JSON.stringify(db);
+      localStorage.setItem(STORAGE_KEY, str);
+      pushToCloudNow();
+    }
+
+    // 1. Setup Custom MP App Logo
+    (function setupAppLogo() {
+      try {
+        const canvas = document.createElement("canvas");
+        canvas.width = 192; canvas.height = 192;
+        const ctx = canvas.getContext("2d");
+        ctx.fillStyle = "#68150f";
+        ctx.beginPath(); ctx.roundRect(0, 0, 192, 192, 36); ctx.fill();
+        ctx.fillStyle = "#ffffff";
+        ctx.font = "bold 88px Arial, sans-serif";
+        ctx.textAlign = "center"; ctx.textBaseline = "middle";
+        ctx.fillText("MP", 96, 100);
+        const iconUrl = canvas.toDataURL("image/png");
+        const link = document.createElement("link");
+        link.rel = "icon"; link.type = "image/png"; link.href = iconUrl;
+        document.head.appendChild(link);
+        const appleLink = document.createElement("link");
+        appleLink.rel = "apple-touch-icon"; appleLink.href = iconUrl;
+        document.head.appendChild(appleLink);
+      } catch (e) {}
+    })();
+
+    // 2. Smart Notification Engine for Customer
+    function playNotificationSound() {
+      try {
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        const ctx = new AudioCtx();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = "sine";
+        osc.frequency.setValueAtTime(880, ctx.currentTime);
+        osc.frequency.setValueAtTime(1174.66, ctx.currentTime + 0.12);
+        gain.gain.setValueAtTime(0.35, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.45);
+        osc.connect(gain); gain.connect(ctx.destination);
+        osc.start(); osc.stop(ctx.currentTime + 0.45);
+      } catch (e) {}
+    }
+
+    function showCustomerNotification(title, body, targetTab) {
+      playNotificationSound();
+      if ("Notification" in window && Notification.permission === "granted") {
+        try {
+          const n = new Notification(title, { body: body });
+          n.onclick = function() {
+            window.focus();
+            if (targetTab) switchCustomerTab(targetTab);
+            this.close();
+          };
+        } catch (e) {}
+      }
+      const toast = document.createElement("div");
+      toast.style.cssText = "position:fixed;top:16px;right:16px;background:#68150f;color:#fff;padding:14px 18px;border-radius:12px;box-shadow:0 8px 25px rgba(0,0,0,0.4);z-index:999999;font-family:sans-serif;font-size:13px;max-width:320px;border:2px solid #ffcc00;cursor:pointer;";
+      toast.innerHTML = `
+        <div style="font-weight:bold;font-size:14px;color:#ffcc00;margin-bottom:4px;">🔔 ${title}</div>
+        <div style="font-size:12px;line-height:1.4;">${body}</div>
+        <div style="font-size:10px;color:#ffd54f;margin-top:6px;font-weight:bold;text-transform:uppercase;">👉 Tap here to view</div>
+      `;
+      toast.onclick = function() {
+        if (targetTab) switchCustomerTab(targetTab);
+        toast.remove();
+      };
+      document.body.appendChild(toast);
+      setTimeout(() => { if (toast.parentNode) toast.remove(); }, 6500);
+    }
+
+    if ("Notification" in window && Notification.permission === "default") {
+      document.addEventListener("click", function reqPerm() {
+        Notification.requestPermission();
+        document.removeEventListener("click", reqPerm);
+      }, { once: true });
+    }
+
+    // 3. Smart Database Merge & Cloud Sync
+    function mergeDatabases(localDB, cloudDB) {
+      if (!localDB) return cloudDB;
+      if (!cloudDB) return localDB;
+      const merged = JSON.parse(JSON.stringify(cloudDB));
+
+      merged.buyers = Object.assign({}, localDB.buyers || {}, cloudDB.buyers || {});
+      merged.categories = Object.assign({}, localDB.categories || {}, cloudDB.categories || {});
+      Object.keys(merged.categories).forEach(catKey => {
+        const cIds = cloudDB.categories?.[catKey]?.buyerIds || [];
+        const lIds = localDB.categories?.[catKey]?.buyerIds || [];
+        merged.categories[catKey].buyerIds = Array.from(new Set([...cIds, ...lIds]));
+      });
+
+      Object.values(merged.buyers).forEach(b => {
+        if (b && b.id && b.catKey && merged.categories[b.catKey]) {
+          if (!merged.categories[b.catKey].buyerIds.includes(b.id)) {
+            merged.categories[b.catKey].buyerIds.unshift(b.id);
+          }
+        }
+      });
+
+      const orderMap = new Map();
+      [...(cloudDB.orders || []), ...(localDB.orders || [])].forEach(o => {
+        if (o && o.id) orderMap.set(String(o.id), o);
+      });
+      merged.orders = Array.from(orderMap.values());
+
+      merged.chats = Object.assign({}, localDB.chats || {}, cloudDB.chats || {});
+      Object.keys(merged.chats).forEach(bId => {
+        const lChats = localDB.chats?.[bId] || [];
+        const cChats = cloudDB.chats?.[bId] || [];
+        merged.chats[bId] = cChats.length >= lChats.length ? cChats : lChats;
+      });
+
+      return merged;
+    }
+
+    async function pushToCloudNow() {
+      if (isPulling || !hasInitialCloudPullCompleted) return;
+      try {
+        const currentRaw = localStorage.getItem(STORAGE_KEY);
+        if (!currentRaw || currentRaw === lastSyncedDBString) return;
+        lastSyncedDBString = currentRaw;
+        await fetch(FB_URL, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ [STORAGE_KEY]: currentRaw })
+        });
+      } catch (e) {}
+    }
+
+    async function pullFromCloudNow() {
+      try {
+        const res = await fetch(FB_URL + "?t=" + Date.now(), { cache: "no-store" });
+        if (!res.ok) {
+          hasInitialCloudPullCompleted = true;
+          return;
+        }
+        const cloudWrapper = await res.json();
+        hasInitialCloudPullCompleted = true;
+
+        if (!cloudWrapper || !cloudWrapper[STORAGE_KEY]) {
+          await pushToCloudNow();
+          return;
+        }
+
+        const cloudDBStr = cloudWrapper[STORAGE_KEY];
+        if (cloudDBStr === lastSyncedDBString) return;
+
+        isPulling = true;
+        const oldDB = lastSyncedDBString ? JSON.parse(lastSyncedDBString) : null;
+        const cloudDB = JSON.parse(cloudDBStr);
+        const mergedDB = mergeDatabases(oldDB, cloudDB);
+        const mergedStr = JSON.stringify(mergedDB);
+
+        // Check if Mumbai Prints sent a reply or uploaded new designs for this customer
+        if (oldDB && currentCustomer && currentCustomer.id) {
+          const myId = currentCustomer.id;
+          const oldMyChats = (oldDB.chats && oldDB.chats[myId]) || [];
+          const newMyChats = (mergedDB.chats && mergedDB.chats[myId]) || [];
+          if (newMyChats.length > oldMyChats.length) {
+            const lastMsg = newMyChats[newMyChats.length - 1];
+            if (lastMsg.from === "shop") {
+              showCustomerNotification("New Reply from Mumbai Prints", `💬 "${lastMsg.text}"`, "chat");
+            }
+          } else if ((mergedDB.designs || []).length > (oldDB.designs || []).length) {
+            showCustomerNotification("New Designs Uploaded!", "✨ Tap here to check out the latest textile collection.", "folders");
+          }
+        }
+
+        lastSyncedDBString = mergedStr;
+        localStorage.setItem(STORAGE_KEY, mergedStr);
+        db = mergedDB;
+
+        // Re-link session if customer was pre-added by Shop/Admin via phone number
+        if (currentCustomer && currentCustomer.phone) {
+          const cleanPhone = currentCustomer.phone.replace(/\D/g, '').slice(-10);
+          const matchedBuyer = Object.values(db.buyers || {}).find(
+            b => (b.phone || '').replace(/\D/g, '').slice(-10) === cleanPhone
+          );
+          if (matchedBuyer) {
+            currentCustomer = matchedBuyer;
+            localStorage.setItem(CUST_SESSION_KEY, JSON.stringify(currentCustomer));
+          }
+        }
+
+        const activeEl = document.activeElement;
+        const isTyping = activeEl && (activeEl.tagName === "INPUT" || activeEl.tagName === "TEXTAREA" || activeEl.tagName === "SELECT");
+        if (!isTyping && currentCustomer && db.buyers[currentCustomer.id]) {
+          renderCustomerTab();
+        }
+        isPulling = false;
+      } catch (e) {
+        hasInitialCloudPullCompleted = true;
+        isPulling = false;
+      }
+    }
+
+    // 4. Invite Link & Customer Registration Logic
     function toggleCustomPlaceInput() {
       const sel = document.getElementById('joinCustPlaceSelect').value;
       document.getElementById('joinCustPlaceCustom').classList.toggle('hidden', sel !== 'OTHER_CUSTOM');
@@ -147,27 +348,56 @@
 
     function checkInviteUrlParams() {
       const params = new URLSearchParams(window.location.search);
-      if(params.get('invite') === '1') {
-        const name = params.get('name') || '';
-        const phone = params.get('phone') || '';
-        const place = params.get('place') || '';
-        document.getElementById('joinCustName').value = name;
-        document.getElementById('joinCustPhone').value = phone;
-        const mainPlaces = ['Ernakulam', 'Tamil Nadu', 'Kottayam', 'Alappuzha'];
-        const match = mainPlaces.find(p => p.toLowerCase() === place.toLowerCase());
-        if(match) {
-          document.getElementById('joinCustPlaceSelect').value = match;
-        } else if(place) {
-          document.getElementById('joinCustPlaceSelect').value = 'OTHER_CUSTOM';
-          document.getElementById('joinCustPlaceCustom').classList.remove('hidden');
-          document.getElementById('joinCustPlaceCustom').value = place;
+      const name = params.get('name') || '';
+      const phone = params.get('phone') || '';
+      const place = params.get('place') || '';
+
+      if (name || phone) {
+        if (name) document.getElementById('joinCustName').value = name;
+        if (phone) document.getElementById('joinCustPhone').value = phone.replace(/\D/g, '').slice(-10);
+        if (place) {
+          const mainPlaces = ['Ernakulam', 'Tamil Nadu', 'Kottayam', 'Alappuzha'];
+          const match = mainPlaces.find(p => p.toLowerCase() === place.toLowerCase());
+          if (match) {
+            document.getElementById('joinCustPlaceSelect').value = match;
+          } else {
+            document.getElementById('joinCustPlaceSelect').value = 'OTHER_CUSTOM';
+            document.getElementById('joinCustPlaceCustom').classList.remove('hidden');
+            document.getElementById('joinCustPlaceCustom').value = place;
+          }
+        }
+
+        // If buyer is already in DB from Admin/Shop invite, log them in automatically!
+        const cleanPhone = phone.replace(/\D/g, '').slice(-10);
+        if (cleanPhone.length === 10) {
+          const existing = Object.values(db.buyers || {}).find(
+            b => (b.phone || '').replace(/\D/g, '').slice(-10) === cleanPhone
+          );
+          if (existing) {
+            currentCustomer = existing;
+            localStorage.setItem(CUST_SESSION_KEY, JSON.stringify(currentCustomer));
+          }
         }
       }
     }
 
-    function initCustomerApp() {
+    async function initCustomerApp() {
+      // First pull fresh cloud data so pre-added buyers from Admin/Shop are recognized immediately
+      await pullFromCloudNow();
       checkInviteUrlParams();
-      if(currentCustomer && db.buyers[currentCustomer.id]) {
+
+      if (currentCustomer && currentCustomer.phone) {
+        const cleanPhone = currentCustomer.phone.replace(/\D/g, '').slice(-10);
+        const existing = Object.values(db.buyers || {}).find(
+          b => (b.phone || '').replace(/\D/g, '').slice(-10) === cleanPhone
+        );
+        if (existing) {
+          currentCustomer = existing;
+          localStorage.setItem(CUST_SESSION_KEY, JSON.stringify(currentCustomer));
+        }
+      }
+
+      if (currentCustomer && db.buyers[currentCustomer.id]) {
         document.getElementById('customerJoinSection').classList.add('hidden');
         document.getElementById('customerMainWorkspace').classList.remove('hidden');
         document.getElementById('customerBottomNav').classList.remove('hidden');
@@ -179,47 +409,79 @@
       }
     }
 
-    function submitCustomerJoinNow() {
+    async function submitCustomerJoinNow() {
       const name = document.getElementById('joinCustName').value.trim();
-      const phone = document.getElementById('joinCustPhone').value.trim();
+      const rawPhone = document.getElementById('joinCustPhone').value.trim();
+      const phone = rawPhone.replace(/\D/g, '').slice(-10);
       const selPlace = document.getElementById('joinCustPlaceSelect').value;
       const place = (selPlace === 'OTHER_CUSTOM')
         ? document.getElementById('joinCustPlaceCustom').value.trim()
         : selPlace;
 
-      if(!name || !phone || !place) {
-        alert('Please enter your Shop Name, Mobile Number, and Place.');
+      if (!name || phone.length !== 10 || !place) {
+        alert('Please enter your Shop Name, valid 10-Digit Mobile Number, and Place.');
         return;
       }
 
-      // Check if buyer with this phone already exists (e.g. added via Admin/Shop SMS invite)
-      let existingBuyer = Object.values(db.buyers).find(b => b.phone === phone);
-      if(!existingBuyer) {
+      const btn = document.getElementById('joinNowBtn');
+      if (btn) { btn.innerText = 'Connecting...'; btn.disabled = true; }
+
+      await pullFromCloudNow();
+
+      // Check if buyer with this 10-digit phone already exists
+      let existingBuyer = Object.values(db.buyers || {}).find(
+        b => (b.phone || '').replace(/\D/g, '').slice(-10) === phone
+      );
+
+      if (!existingBuyer) {
         let matchedCatKey = 'catX';
-        Object.keys(db.categories).forEach(k => {
-          if(k !== 'catX' && db.categories[k].place.toLowerCase() === place.toLowerCase()) {
+        Object.keys(db.categories || {}).forEach(k => {
+          if (k !== 'catX' && db.categories[k].place.toLowerCase() === place.toLowerCase()) {
             matchedCatKey = k;
           }
         });
-        const newId = 'b_' + Date.now();
+        if (!db.categories[matchedCatKey]) matchedCatKey = Object.keys(db.categories)[0] || 'cat1';
+
+        const newId = 'b_' + Date.now() + '_' + Math.floor(Math.random() * 1000);
         existingBuyer = { id: newId, name, phone, place, nickname: '', catKey: matchedCatKey, isFav: false };
         db.buyers[newId] = existingBuyer;
+        if (!db.categories[matchedCatKey].buyerIds) db.categories[matchedCatKey].buyerIds = [];
         db.categories[matchedCatKey].buyerIds.unshift(newId);
+
+        if (!db.chats) db.chats = {};
         db.chats[newId] = [
-          { from: 'shop', sender: 'Mumbai Prints', text: `Welcome ${name} to the Mumbai Prints Gold Customer Family! You can chat with us here or browse folders to place orders.`, time: 'Just now' }
+          {
+            from: 'shop',
+            sender: 'Mumbai Prints',
+            text: `Welcome ${name} to the Mumbai Prints Exclusive Digital Catalog! You can chat with us here or browse folders to place orders.`,
+            time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+          }
         ];
         saveDB();
+      } else {
+        // Ensure existing buyer is listed in their category
+        const catK = existingBuyer.catKey || 'cat1';
+        if (db.categories[catK] && !db.categories[catK].buyerIds.includes(existingBuyer.id)) {
+          db.categories[catK].buyerIds.unshift(existingBuyer.id);
+          saveDB();
+        }
       }
 
       currentCustomer = existingBuyer;
       localStorage.setItem(CUST_SESSION_KEY, JSON.stringify(currentCustomer));
-      initCustomerApp();
+      if (btn) { btn.innerText = 'Join Now →'; btn.disabled = false; }
+
+      document.getElementById('customerJoinSection').classList.add('hidden');
+      document.getElementById('customerMainWorkspace').classList.remove('hidden');
+      document.getElementById('customerBottomNav').classList.remove('hidden');
+      renderCustomerTab();
     }
 
     function switchCustomerTab(tab) {
       activeCustTab = tab;
       ['chat', 'folders', 'favorites', 'about'].forEach(t => {
         const btn = document.getElementById('custNav_' + t);
+        if (!btn) return;
         btn.className = (t === tab)
           ? 'py-2 px-1 rounded-xl flex flex-col items-center justify-center bg-orange-100 text-mp-maroon font-black text-[11px]'
           : 'py-2 px-1 rounded-xl flex flex-col items-center justify-center text-slate-500 font-bold text-[11px]';
@@ -230,13 +492,18 @@
     function renderCustomerTab() {
       db = JSON.parse(localStorage.getItem(STORAGE_KEY)) || db;
       const box = document.getElementById('customerMainWorkspace');
+      if (!box || !currentCustomer) return;
       box.innerHTML = '';
       const custId = currentCustomer.id;
       const b = db.buyers[custId] || currentCustomer;
 
+      if (!db.folders.includes(selectedCustFolder)) {
+        selectedCustFolder = db.folders[0] || 'Ajrakh Print';
+      }
+
       // TAB 1: DIRECT 1-ON-1 CHAT WITH MUMBAI PRINTS
-      if(activeCustTab === 'chat') {
-        const msgs = db.chats[custId] || [];
+      if (activeCustTab === 'chat') {
+        const msgs = (db.chats && db.chats[custId]) || [];
         let msgHtml = msgs.map(m => {
           const isMe = m.from === 'cust';
           return `
@@ -267,19 +534,19 @@
           </div>
         `;
         const cb = document.getElementById('custChatBox');
-        if(cb) cb.scrollTop = cb.scrollHeight;
+        if (cb) cb.scrollTop = cb.scrollHeight;
       }
 
       // TAB 2: FOLDERS & DESIGNS FEED
-      else if(activeCustTab === 'folders') {
-        let folderButtons = db.folders.map(f => `
+      else if (activeCustTab === 'folders') {
+        let folderButtons = (db.folders || []).map(f => `
           <button onclick="selectedCustFolder='${f}'; renderCustomerTab();" class="px-3.5 py-2 rounded-xl text-xs font-bold shrink-0 transition ${
             selectedCustFolder === f ? 'bg-mp-maroon text-white shadow' : 'bg-white border border-orange-200 text-mp-maroon'
           }">📁 ${f}</button>
         `).join('');
 
         const myCat = b.catKey || 'cat1';
-        const visibleDesigns = db.designs.filter(d =>
+        const visibleDesigns = (db.designs || []).filter(d =>
           d.folder === selectedCustFolder && (d.targetCat === 'all' || d.targetCat === myCat)
         );
 
@@ -323,8 +590,8 @@
       }
 
       // TAB 3: FAVORITE ITEMS
-      else if(activeCustTab === 'favorites') {
-        const favDesigns = db.designs.filter(d => d.favBy && d.favBy[custId]);
+      else if (activeCustTab === 'favorites') {
+        const favDesigns = (db.designs || []).filter(d => d.favBy && d.favBy[custId]);
         let favHtml = favDesigns.length === 0
           ? `<div class="bg-white rounded-2xl border p-10 text-center text-xs text-slate-400">❤️ You haven't added any designs to Favorite Items yet.<br>Tap the 🤍 Favorite button on any design in Folders to save it here!</div>`
           : favDesigns.map(d => `
@@ -354,9 +621,9 @@
         `;
       }
 
-      // TAB 4: ABOUT US (MUMBAI PRINTS DETAILS + GRATITUDE MESSAGE)
-      else if(activeCustTab === 'about') {
-        const a = db.aboutUs;
+      // TAB 4: ABOUT US
+      else if (activeCustTab === 'about') {
+        const a = db.aboutUs || defaultDB.aboutUs;
         box.innerHTML = `
           <div class="bg-white rounded-2xl shadow-lg border-2 border-orange-200 overflow-hidden">
             <div class="bg-mp-maroon text-white p-6 text-center border-b-4 border-mp-orange">
@@ -399,24 +666,28 @@
 
     function sendCustChatMessage() {
       const input = document.getElementById('custChatInput');
-      const text = input.value.trim();
-      if(!text) return;
+      const text = input ? input.value.trim() : '';
+      if (!text || !currentCustomer) return;
       const custId = currentCustomer.id;
-      if(!db.chats[custId]) db.chats[custId] = [];
+      const b = db.buyers[custId] || currentCustomer;
+
+      if (!db.chats) db.chats = {};
+      if (!db.chats[custId]) db.chats[custId] = [];
       db.chats[custId].push({
         from: 'cust',
-        sender: currentCustomer.name,
+        sender: b.name,
         text,
         time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
       });
+      input.value = '';
       saveDB();
       renderCustomerTab();
     }
 
     function toggleCustFavoriteDesign(designId) {
-      const d = db.designs.find(x => x.id === designId);
-      if(!d) return;
-      if(!d.favBy) d.favBy = {};
+      const d = (db.designs || []).find(x => x.id === designId);
+      if (!d || !currentCustomer) return;
+      if (!d.favBy) d.favBy = {};
       const custId = currentCustomer.id;
       d.favBy[custId] = !d.favBy[custId];
       saveDB();
@@ -426,29 +697,42 @@
     function placeCustomerOrder(designId) {
       const input = document.getElementById('qty_' + designId);
       const qty = input ? input.value.trim() : '';
-      if(!qty) {
+      if (!qty) {
         alert('Please enter quantity before ordering!');
         return;
       }
-      const d = db.designs.find(x => x.id === designId);
+      const d = (db.designs || []).find(x => x.id === designId);
+      if (!d || !currentCustomer) return;
+
       const custId = currentCustomer.id;
+      const b = db.buyers[custId] || currentCustomer;
       const nowStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
+      // Ensure buyer exists in db.buyers so Admin/Shop always see their name & place
+      if (!db.buyers[custId]) {
+        db.buyers[custId] = b;
+      }
+
       // 1. Add to customer's 1-on-1 chat with image preview
-      if(!db.chats[custId]) db.chats[custId] = [];
+      if (!db.chats) db.chats = {};
+      if (!db.chats[custId]) db.chats[custId] = [];
       db.chats[custId].push({
         from: 'cust',
-        sender: currentCustomer.name,
+        sender: b.name,
         text: `Order Quantity: ${qty}`,
         productImg: d.img,
         productTitle: d.title,
         time: nowStr
       });
 
-      // 2. Add to All Categories Order List (Newest First)
+      // 2. Add to All Categories Order List (Newest First, with Buyer Name & Place backup)
+      if (!db.orders) db.orders = [];
       db.orders.unshift({
-        id: 'ord_' + Date.now(),
+        id: 'ord_' + Date.now() + '_' + Math.floor(Math.random() * 1000),
         buyerId: custId,
+        buyerName: b.name,
+        buyerPhone: b.phone,
+        buyerPlace: b.place,
         designId: d.id,
         designTitle: d.title,
         img: d.img,
@@ -457,7 +741,7 @@
       });
 
       saveDB();
-      alert(`Order for "${d.title}" (${qty}) sent to Mumbai Prints!`);
+      alert(`✅ Order for "${d.title}" (${qty}) sent to Mumbai Prints!`);
       switchCustomerTab('chat');
     }
 
@@ -465,294 +749,9 @@
       alert('📲 Add Mumbai Prints to your Phone Home Screen:\n\n• On Android (Chrome): Tap the 3 dots (⋮) at top-right → Tap "Add to Home screen" or "Install app".\n• On iPhone (Safari): Tap the Share icon (⬆️) at bottom → Scroll down and tap "Add to Home Screen".\n\nIt will open like a full-screen native app without any browser bar!');
     }
 
+    // Initialize App & Start 2-Second Real-Time Sync
     initCustomerApp();
+    setInterval(pullFromCloudNow, 2000);
   </script>
-</body><!-- ===== MUMBAI PRINTS MASTER UPGRADE: CLOUD SYNC + NOTIFICATIONS + AUTO-LOGIN + LOGO ===== -->
-<script>
-(function() {
-  const FB_URL = "https://mumbai-prints-default-rtdb.firebaseio.com/mp_cloud_db_2026.json";
-  const path = window.location.pathname.toLowerCase();
-  const isShop = path.includes("shop");
-  const isAdmin = path.includes("admin");
-  const isCustomer = !isShop && !isAdmin;
-
-  // 1. GENERATE CUSTOM "MP" LOGO FOR HOME SCREEN SHORTCUT
-  function setupAppLogo() {
-    try {
-      const canvas = document.createElement("canvas");
-      canvas.width = 192;
-      canvas.height = 192;
-      const ctx = canvas.getContext("2d");
-      ctx.fillStyle = "#801b1b";
-      ctx.beginPath();
-      ctx.roundRect(0, 0, 192, 192, 36);
-      ctx.fill();
-      ctx.fillStyle = "#ffffff";
-      ctx.font = "bold 88px Arial, sans-serif";
-      ctx.textAlign = "center";
-      ctx.textBaseline = "middle";
-      ctx.fillText("MP", 96, 100);
-      const iconUrl = canvas.toDataURL("image/png");
-
-      document.querySelectorAll("link[rel*='icon'], link[rel='manifest']").forEach(el => el.remove());
-
-      const link1 = document.createElement("link");
-      link1.rel = "icon";
-      link1.type = "image/png";
-      link1.href = iconUrl;
-      document.head.appendChild(link1);
-
-      const link2 = document.createElement("link");
-      link2.rel = "apple-touch-icon";
-      link2.href = iconUrl;
-      document.head.appendChild(link2);
-
-      const manifest = {
-        name: "Mumbai Prints",
-        short_name: "Mumbai Prints",
-        start_url: window.location.href,
-        display: "standalone",
-        background_color: "#801b1b",
-        theme_color: "#801b1b",
-        icons: [{ src: iconUrl, sizes: "192x192", type: "image/png" }]
-      };
-      const mLink = document.createElement("link");
-      mLink.rel = "manifest";
-      mLink.href = "data:application/json;charset=utf-8," + encodeURIComponent(JSON.stringify(manifest));
-      document.head.appendChild(mLink);
-    } catch (e) {}
-  }
-  setupAppLogo();
-
-  // 2. NOTIFICATION SOUND & POP-UP ENGINE
-  function playNotificationSound() {
-    try {
-      const AudioCtx = window.AudioContext || window.webkitAudioContext;
-      const ctx = new AudioCtx();
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-      osc.type = "sine";
-      osc.frequency.setValueAtTime(880, ctx.currentTime);
-      osc.frequency.setValueAtTime(1174.66, ctx.currentTime + 0.12);
-      gain.gain.setValueAtTime(0.3, ctx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.45);
-      osc.connect(gain);
-      gain.connect(ctx.destination);
-      osc.start();
-      osc.stop(ctx.currentTime + 0.45);
-    } catch (e) {}
-  }
-
-  function showNotification(title, body) {
-    playNotificationSound();
-    if ("Notification" in window && Notification.permission === "granted") {
-      try {
-        new Notification(title, { body: body });
-      } catch (e) {}
-    }
-    // On-screen toast alert so it never misses
-    const toast = document.createElement("div");
-    toast.style.cssText = "position:fixed;top:16px;right:16px;background:#801b1b;color:#fff;padding:12px 18px;border-radius:10px;box-shadow:0 6px 20px rgba(0,0,0,0.3);z-index:999999;font-family:sans-serif;font-size:14px;max-width:300px;border:2px solid #ffcc00;";
-    toast.innerHTML = "🔔 <b>" + title + "</b><br><span style='font-size:12px;opacity:0.95;'>" + body + "</span>";
-    document.body.appendChild(toast);
-    setTimeout(() => toast.remove(), 4500);
-  }
-
-  if ("Notification" in window && Notification.permission === "default") {
-    document.addEventListener("click", function reqPerm() {
-      Notification.requestPermission();
-      document.removeEventListener("click", reqPerm);
-    }, { once: true });
-  }
-
-  // 3. PASSWORD OVERRIDE + CLEAR PRE-FILLED BOXES + SHOP AUTO-LOGIN
-  function setupAuthAndAutoLogin() {
-    if (!isShop && !isAdmin) return;
-    const expectedUser = "Mumbai29";
-    const expectedPass = isAdmin ? "MU2051" : "MU2000";
-
-    const inputs = Array.from(document.querySelectorAll("input"));
-    const passInput = inputs.find(i => i.type === "password" || (i.id && i.id.toLowerCase().includes("pass")) || (i.value && i.value.includes("123")));
-    const userInput = passInput ? inputs[inputs.indexOf(passInput) - 1] : null;
-
-    if (userInput && passInput) {
-      const oldUserVal = userInput.value || (isAdmin ? "admin" : "shop");
-      const oldPassVal = passInput.value || (isAdmin ? "admin123" : "mp1234");
-
-      // Clear pre-filled values so strangers see empty boxes
-      userInput.value = "";
-      passInput.value = "";
-      userInput.setAttribute("placeholder", "Enter Username");
-      passInput.setAttribute("placeholder", "Enter Password");
-
-      // Find login button
-      const buttons = Array.from(document.querySelectorAll("button"));
-      const loginBtn = buttons.find(b => b.innerText.toUpperCase().includes("LOGIN"));
-
-      if (loginBtn) {
-        const origOnClick = loginBtn.onclick;
-        loginBtn.onclick = null;
-        loginBtn.addEventListener("click", function(e) {
-          e.preventDefault();
-          e.stopImmediatePropagation();
-          const u = userInput.value.trim();
-          const p = passInput.value.trim();
-          if (u === expectedUser && p === expectedPass) {
-            if (isShop) {
-              localStorage.setItem("mp_shop_autologin_v1", "true");
-            }
-            // Temporarily set old credentials so internal function passes
-            userInput.value = oldUserVal;
-            passInput.value = oldPassVal;
-            if (origOnClick) origOnClick.call(loginBtn, e);
-          } else {
-            alert("Wrong Username or Password!");
-          }
-        }, true);
-
-        // Auto-login for Shop only (stays logged in on refresh)
-        if (isShop && localStorage.getItem("mp_shop_autologin_v1") === "true") {
-          setTimeout(() => {
-            userInput.value = oldUserVal;
-            passInput.value = oldPassVal;
-            if (origOnClick) origOnClick.call(loginBtn, new Event("click"));
-          }, 150);
-        }
-      }
-    }
-
-    // Hook Logout button to clear Shop Auto-Login
-    document.addEventListener("click", function(e) {
-      const btn = e.target.closest("button, a");
-      if (btn && btn.innerText.toLowerCase().includes("logout")) {
-        if (isShop) localStorage.removeItem("mp_shop_autologin_v1");
-      }
-    }, true);
-  }
-  setupAuthAndAutoLogin();
-
-  // 4. REAL-TIME FIREBASE CLOUD SYNC ENGINE
-  const PRIVATE_KEYS = ["mp_shop_autologin_v1", "mp_cloud_last_hash"];
-  function isPrivateKey(k) {
-    if (PRIVATE_KEYS.includes(k)) return true;
-    const kl = k.toLowerCase();
-    // Keep individual customer login session private per phone
-    if (kl.includes("current") || kl.includes("logged") || kl.includes("session") || kl.includes("active_user") || kl.includes("fav")) return true;
-    try {
-      const val = JSON.parse(localStorage.getItem(k));
-      if (val && !Array.isArray(val) && typeof val === "object" && val.name && val.phone && Object.keys(val).length <= 6) {
-        return true; // Single customer session object
-      }
-    } catch (e) {}
-    return false;
-  }
-
-  function getSharedLocalData() {
-    const data = {};
-    for (let i = 0; i < localStorage.length; i++) {
-      const k = localStorage.key(i);
-      if (k && !isPrivateKey(k)) {
-        data[k] = localStorage.getItem(k);
-      }
-    }
-    return data;
-  }
-
-  let isPulling = false;
-  let lastCloudString = "";
-  let prevMsgCount = -1;
-
-  function countTotalMessages(dataObj) {
-    let count = 0;
-    Object.values(dataObj).forEach(valStr => {
-      try {
-        const parsed = JSON.parse(valStr);
-        const str = JSON.stringify(parsed);
-        const matches = str.match(/"text"\s*:|"msg"\s*:|"message"\s*:/g);
-        if (matches) count += matches.length;
-      } catch (e) {}
-    });
-    return count;
-  }
-
-  async function pushToCloud() {
-    if (isPulling) return;
-    try {
-      const payload = getSharedLocalData();
-      if (Object.keys(payload).length === 0) return;
-      const str = JSON.stringify(payload);
-      if (str === lastCloudString) return;
-      lastCloudString = str;
-      prevMsgCount = countTotalMessages(payload);
-      await fetch(FB_URL, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: str
-      });
-    } catch (e) {}
-  }
-
-  function refreshAppUI() {
-    const fns = ["renderAll", "loadData", "render", "init", "renderBuyers", "renderCustomers", "renderCategories", "renderFolders", "renderChat", "loadChat", "updateUI"];
-    fns.forEach(fn => {
-      if (typeof window[fn] === "function") {
-        try { window[fn](); } catch (e) {}
-      }
-    });
-    try {
-      window.dispatchEvent(new Event("storage"));
-    } catch (e) {}
-  }
-
-  async function pullFromCloud() {
-    try {
-      const res = await fetch(FB_URL);
-      if (!res.ok) return;
-      const cloudData = await res.json();
-      if (!cloudData || typeof cloudData !== "object") {
-        // First time: push existing local data to cloud
-        await pushToCloud();
-        return;
-      }
-      const cloudStr = JSON.stringify(cloudData);
-      if (cloudStr === lastCloudString) return;
-
-      isPulling = true;
-      const newMsgCount = countTotalMessages(cloudData);
-      if (prevMsgCount !== -1 && newMsgCount > prevMsgCount) {
-        showNotification("Mumbai Prints", "Naya message ya update aaya hai!");
-      }
-      prevMsgCount = newMsgCount;
-      lastCloudString = cloudStr;
-
-      Object.keys(cloudData).forEach(k => {
-        if (!isPrivateKey(k) && localStorage.getItem(k) !== cloudData[k]) {
-          localStorage.setItem(k, cloudData[k]);
-        }
-      });
-
-      const activeTag = document.activeElement ? document.activeElement.tagName : "";
-      if (activeTag !== "INPUT" && activeTag !== "TEXTAREA" && activeTag !== "SELECT") {
-        refreshAppUI();
-      }
-      isPulling = false;
-    } catch (e) {
-      isPulling = false;
-    }
-  }
-
-  // Intercept localStorage.setItem so any change pushes immediately
-  const origSetItem = localStorage.setItem.bind(localStorage);
-  localStorage.setItem = function(k, v) {
-    origSetItem(k, v);
-    if (!isPulling && !isPrivateKey(k)) {
-      setTimeout(pushToCloud, 100);
-    }
-  };
-
-  // Start Sync Loop
-  pullFromCloud();
-  setInterval(pullFromCloud, 2500);
-})();
-</script>
+</body>
 </html>
